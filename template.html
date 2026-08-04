@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Factum Group Tracking</title>
+<style>
+  :root {
+    color-scheme: light;
+    --page:           #f9f9f7;
+    --surface-1:      #fcfcfb;
+    --text-primary:   #0b0b0b;
+    --text-secondary: #52514e;
+    --text-muted:     #898781;
+    --border:         rgba(11,11,11,0.10);
+    --grid:           #e1e0d9;
+    --baseline:       #c3c2b7;
+    --series-1:       #2a78d6;  /* Factum Auto — покупки */
+    --series-1-lt:    #86b6ef;  /* Factum Auto — депозиты (ordinal, ступень светлее) */
+    --series-2:       #eb6834;  /* Operator-EX */
+    --series-3:       #1baf7a;  /* СТО */
+    --series-4:       #eda100;  /* Factum Auto Dealer */
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:where(:not([data-theme="light"])) {
+      color-scheme: dark;
+      --page:           #0d0d0d;
+      --surface-1:      #1a1a19;
+      --text-primary:   #ffffff;
+      --text-secondary: #c3c2b7;
+      --text-muted:     #898781;
+      --border:         rgba(255,255,255,0.10);
+      --grid:           #2c2c2a;
+      --baseline:       #383835;
+      --series-1:       #3987e5;
+      --series-1-lt:    #6da7ec;
+      --series-2:       #d95926;
+      --series-3:       #199e70;
+      --series-4:       #c98500;
+    }
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --page:           #0d0d0d;
+    --surface-1:      #1a1a19;
+    --text-primary:   #ffffff;
+    --text-secondary: #c3c2b7;
+    --text-muted:     #898781;
+    --border:         rgba(255,255,255,0.10);
+    --grid:           #2c2c2a;
+    --baseline:       #383835;
+    --series-1:       #3987e5;
+    --series-1-lt:    #6da7ec;
+    --series-2:       #d95926;
+    --series-3:       #199e70;
+    --series-4:       #c98500;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+    background: var(--page);
+    color: var(--text-primary);
+    min-height: 100vh;
+    padding: 40px 24px 56px;
+  }
+
+  .wrap { max-width: 1060px; margin: 0 auto; }
+
+  header {
+    margin-bottom: 24px;
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 24px;
+    flex-wrap: wrap;
+  }
+
+  .kicker {
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-bottom: 6px;
+  }
+
+  h1 { font-size: 28px; font-weight: 700; letter-spacing: -0.01em; }
+
+  .sub { margin-top: 8px; font-size: 14px; color: var(--text-secondary); }
+
+  /* Общий блок: прогресс календарного месяца */
+  .month-progress {
+    background: var(--surface-1);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 14px 18px;
+    min-width: 250px;
+  }
+  .month-progress .mp-label {
+    font-size: 13px;
+    color: var(--text-secondary);
+    margin-bottom: 6px;
+  }
+  .mp-row { display: flex; align-items: center; gap: 12px; }
+  .mp-pct { font-size: 22px; font-weight: 650; }
+  .mp-days { font-size: 12px; color: var(--text-muted); margin-top: 4px; }
+
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+  }
+  .span-2 { grid-column: span 2; }
+  @media (max-width: 720px) {
+    .grid { grid-template-columns: 1fr; }
+    .span-2 { grid-column: span 1; }
+  }
+
+  .card {
+    background: var(--surface-1);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 22px 24px 18px;
+  }
+
+  .card-head { display: flex; align-items: center; gap: 9px; }
+  .dot { width: 10px; height: 10px; border-radius: 50%; flex: none; }
+  .proj-name { font-size: 16px; font-weight: 650; }
+  .proj-desc { font-size: 13px; color: var(--text-muted); margin: 2px 0 18px; }
+
+  .demo-badge {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-muted);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    padding: 2px 10px;
+  }
+
+  .metrics { display: flex; gap: 44px; flex-wrap: wrap; margin-bottom: 18px; }
+  .metric { min-width: 190px; flex: 0 1 auto; }
+  .metric-label { font-size: 13px; color: var(--text-secondary); margin-bottom: 4px; }
+  .metric-value { font-size: 40px; line-height: 1.05; font-weight: 600; letter-spacing: -0.01em; }
+  .metric-value .of-plan { font-size: 15px; font-weight: 400; color: var(--text-muted); letter-spacing: 0; }
+
+  /* Шкала выполнения плана */
+  .plan-row { display: flex; align-items: center; gap: 10px; margin-top: 9px; }
+  .meter {
+    flex: 1 1 auto;
+    height: 8px;
+    border-radius: 4px;
+    overflow: hidden;
+    position: relative;
+  }
+  .meter .meter-fill {
+    position: absolute; inset: 0 auto 0 0;
+    border-radius: 4px;
+    min-width: 2px;
+  }
+  .plan-pct { font-size: 13px; font-weight: 650; min-width: 44px; text-align: right; }
+  .plan-note { font-size: 12px; color: var(--text-muted); margin-top: 5px; }
+
+  .no-plan { font-size: 12px; color: var(--text-muted); margin-top: 9px; }
+
+  /* График */
+  .chart-block { border-top: 1px solid var(--grid); padding-top: 14px; margin-top: 4px; }
+  .chart-head {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 12px; margin-bottom: 8px; flex-wrap: wrap;
+  }
+  .chart-title { font-size: 12px; color: var(--text-muted); }
+  .legend { display: flex; gap: 16px; }
+  .legend-item { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text-secondary); }
+  .swatch { width: 10px; height: 10px; border-radius: 3px; flex: none; }
+  .chart svg { display: block; width: 100%; height: auto; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <div class="kicker">Factum Group</div>
+      <h1>Factum Group Tracking</h1>
+      <div class="sub">Август 2026 · главные метрики месяца по проектам · данные на __STAMP__</div>
+    </div>
+    <div class="month-progress">
+      <div class="mp-label">Прогресс календарного месяца</div>
+      <div class="mp-row">
+        <span class="mp-pct" id="mp-pct">—</span>
+        <div class="meter" style="flex:1; background: var(--grid);">
+          <span class="meter-fill" id="mp-fill" style="background: var(--text-muted); width: 0%;"></span>
+        </div>
+      </div>
+      <div class="mp-days" id="mp-days"></div>
+    </div>
+  </header>
+
+  <div class="grid" id="grid"></div>
+</div>
+
+<script>
+// ---------- данные (снимок из Google-таблицы «Менеджеры отчет», 4 августа 2026) ----------
+const MONTHS = ['Янв','Фев','Мар','Апр','Май','Июн','Июл','Авг'];
+
+const PROJECTS = __DATA_JSON__;
+
+// ---------- прогресс календарного месяца (считается на дату открытия) ----------
+(function () {
+  const now = new Date();
+  const day = now.getDate();
+  const dim = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+  const pct = Math.round(day / dim * 100);
+  document.getElementById('mp-pct').textContent = pct + '%';
+  document.getElementById('mp-fill').style.width = pct + '%';
+  document.getElementById('mp-days').textContent = day + '-й день из ' + dim;
+})();
+
+// ---------- рендер ----------
+const esc = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;');
+
+function barPath(x, y, w, h, r) {
+  // скругление 4px только сверху, у базовой линии — прямые углы
+  r = Math.min(r, w / 2, h);
+  return `M${x},${y + h} L${x},${y + r} Q${x},${y} ${x + r},${y} L${x + w - r},${y} Q${x + w},${y} ${x + w},${y + r} L${x + w},${y + h} Z`;
+}
+
+function renderChart(p) {
+  const W = p.span2 ? 920 : 440, H = 168, padT = 22, padB = 20, padX = 6;
+  const plotH = H - padT - padB;
+  const baseY = padT + plotH;
+  const nGroups = p.months.length;
+  const series = p.metrics.filter(m => m.series);
+  const nSer = series.length;
+  const maxV = Math.max(...series.flatMap(m => m.series));
+  const groupW = (W - padX * 2) / nGroups;
+  const barW = Math.min(24, (groupW - 14 - (nSer - 1) * 2) / nSer);
+  let out = '';
+  // базовая линия
+  out += `<line x1="0" y1="${baseY}" x2="${W}" y2="${baseY}" stroke="var(--baseline)" stroke-width="1"/>`;
+  for (let g = 0; g < nGroups; g++) {
+    const gx = padX + g * groupW;
+    const totalBars = nSer * barW + (nSer - 1) * 2;
+    const start = gx + (groupW - totalBars) / 2;
+    for (let s = 0; s < nSer; s++) {
+      const v = series[s].series[g];
+      if (v == null) continue;
+      const h = Math.max(2, v / maxV * plotH);
+      const x = start + s * (barW + 2);
+      const y = baseY - h;
+      out += `<path d="${barPath(x, y, barW, h, 4)}" fill="${series[s].color}"/>`;
+      out += `<text x="${x + barW / 2}" y="${y - 5}" text-anchor="middle" font-size="11" fill="var(--text-secondary)">${v}</text>`;
+    }
+    // подпись месяца; текущий (последний) — жирнее
+    const isLast = g === nGroups - 1;
+    out += `<text x="${gx + groupW / 2}" y="${baseY + 15}" text-anchor="middle" font-size="11" ${isLast ? 'font-weight="650"' : ''} fill="var(--text-muted)">${p.months[g]}</text>`;
+  }
+  return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(p.chartTitle)}">${out}</svg>`;
+}
+
+function renderMetric(m, projColor) {
+  let planHtml;
+  if (m.plan != null) {
+    const pct = Math.round(m.fact / m.plan * 100);
+    planHtml = `
+      <div class="plan-row">
+        <div class="meter" style="background: color-mix(in srgb, ${m.color} 18%, var(--surface-1));">
+          <span class="meter-fill" style="background: ${m.color}; width: ${Math.min(100, pct)}%;"></span>
+        </div>
+        <span class="plan-pct">${pct}%</span>
+      </div>
+      <div class="plan-note">план на август: ${m.plan}</div>`;
+  } else {
+    planHtml = `<div class="no-plan">план в таблице не задан</div>`;
+  }
+  return `
+    <div class="metric">
+      <div class="metric-label">${esc(m.label)}</div>
+      <div class="metric-value">${m.fact}</div>
+      ${planHtml}
+    </div>`;
+}
+
+function renderCard(p) {
+  const legend = p.metrics.length > 1
+    ? `<div class="legend">${p.metrics.map(m =>
+        `<div class="legend-item"><span class="swatch" style="background:${m.color}"></span>${esc(m.label)}</div>`).join('')}</div>`
+    : '';
+  return `
+    <section class="card${p.span2 ? ' span-2' : ''}">
+      <div class="card-head">
+        <span class="dot" style="background:${p.color}"></span>
+        <span class="proj-name">${esc(p.name)}</span>
+        ${p.demo ? '<span class="demo-badge">демо-данные</span>' : ''}
+      </div>
+      <div class="proj-desc">${esc(p.desc)}</div>
+      <div class="metrics">${p.metrics.map(m => renderMetric(m, p.color)).join('')}</div>
+      <div class="chart-block">
+        <div class="chart-head">
+          <span class="chart-title">${esc(p.chartTitle)}</span>
+          ${legend}
+        </div>
+        <div class="chart">${renderChart(p)}</div>
+      </div>
+    </section>`;
+}
+
+document.getElementById('grid').innerHTML = PROJECTS.map(renderCard).join('');
+</script>
+</body>
+</html>
