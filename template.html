@@ -186,7 +186,7 @@
       <div class="sub">Август 2026 · главные метрики месяца по проектам · данные на __STAMP__</div>
     </div>
     <div class="month-progress">
-      <div class="mp-label">Прогресс календарного месяца</div>
+      <div class="mp-label">Прогресс месяца (рабочие дни)</div>
       <div class="mp-row">
         <span class="mp-pct" id="mp-pct">—</span>
         <div class="meter" style="flex:1; background: var(--grid);">
@@ -206,15 +206,26 @@ const MONTHS = ['Янв','Фев','Мар','Апр','Май','Июн','Июл','
 
 const PROJECTS = __DATA_JSON__;
 
-// ---------- прогресс календарного месяца (считается на дату открытия) ----------
+// ---------- прогресс месяца по рабочим дням, пн–пт (считается на дату открытия) ----------
 (function () {
   const now = new Date();
-  const day = now.getDate();
-  const dim = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
-  const pct = Math.round(day / dim * 100);
+  const y = now.getFullYear(), m = now.getMonth();
+  const dim = new Date(y, m + 1, 0).getDate();
+  let total = 0, elapsed = 0;
+  for (let d = 1; d <= dim; d++) {
+    const dow = new Date(y, m, d).getDay();
+    if (dow >= 1 && dow <= 5) {
+      total++;
+      if (d <= now.getDate()) elapsed++;
+    }
+  }
+  const pct = total ? Math.round(elapsed / total * 100) : 0;
+  const todayIsWorkday = now.getDay() >= 1 && now.getDay() <= 5;
   document.getElementById('mp-pct').textContent = pct + '%';
   document.getElementById('mp-fill').style.width = pct + '%';
-  document.getElementById('mp-days').textContent = day + '-й день из ' + dim;
+  document.getElementById('mp-days').textContent = todayIsWorkday
+    ? elapsed + '-й рабочий день из ' + total
+    : elapsed + ' из ' + total + ' рабочих дней прошло (выходной)';
 })();
 
 // ---------- рендер ----------
