@@ -262,7 +262,9 @@ function renderChart(p) {
 function renderMetric(m, projColor) {
   let planHtml;
   if (m.plan != null) {
-    const pct = Math.round(m.fact / m.plan * 100);
+    const factForPlan = (m.planFact != null) ? m.planFact : m.fact;
+    const pct = Math.round(factForPlan / m.plan * 100);
+    const note = m.planNote || `план на текущий месяц: ${m.plan}`;
     planHtml = `
       <div class="plan-row">
         <div class="meter" style="background: color-mix(in srgb, ${m.color} 18%, var(--surface-1));">
@@ -270,7 +272,7 @@ function renderMetric(m, projColor) {
         </div>
         <span class="plan-pct">${pct}%</span>
       </div>
-      <div class="plan-note">план на август: ${m.plan}</div>`;
+      <div class="plan-note">${esc(note)}</div>`;
   } else {
     planHtml = `<div class="no-plan">план в таблице не задан</div>`;
   }

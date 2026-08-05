@@ -183,7 +183,7 @@
     <div>
       <div class="kicker">Factum Group</div>
       <h1>Factum Group Tracking</h1>
-      <div class="sub">Август 2026 · главные метрики месяца по проектам · данные на 05.08.2026 02:39 (Киев)</div>
+      <div class="sub">Август 2026 · главные метрики месяца по проектам · данные на 05.08.2026 10:17 (Киев)</div>
     </div>
     <div class="month-progress">
       <div class="mp-label">Прогресс календарного месяца</div>
@@ -204,7 +204,7 @@
 // ---------- данные (снимок из Google-таблицы «Менеджеры отчет», 4 августа 2026) ----------
 const MONTHS = ['Янв','Фев','Мар','Апр','Май','Июн','Июл','Авг'];
 
-const PROJECTS = [{"name": "Factum Auto", "desc": "Импорт авто под заказ", "demo": false, "span2": true, "color": "var(--series-1)", "metrics": [{"label": "Депозиты", "fact": 22, "plan": 240, "series": [185, 195, 225, 243, 225, 259, 249, 22], "color": "var(--series-1-lt)"}, {"label": "Покупки", "fact": 8, "plan": 195, "series": [140, 144, 179, 186, 187, 166, 174, 8], "color": "var(--series-1)"}], "chartTitle": "Факт по месяцам, 2026 (текущий месяц — идёт)", "months": ["Янв", "Фев", "Мар", "Апр", "Май", "Июн", "Июл", "Авг"]}, {"name": "Operator-EX", "desc": "Экспорт и продажи дилерам", "demo": false, "span2": false, "color": "var(--series-2)", "metrics": [{"label": "Куплено авто дилерами", "fact": 3, "plan": null, "series": [42, 17, 3], "color": "var(--series-2)"}], "chartTitle": "Факт по месяцам (аналитика ведётся с июня; текущий — идёт)", "months": ["Июн", "Июл", "Авг"]}, {"name": "СТО", "desc": "Кузовной ремонт и покраска", "demo": true, "span2": false, "color": "var(--series-3)", "metrics": [{"label": "Выдано авто в текущем месяце", "fact": 9, "plan": 12, "series": [6, 7, 7, 8, 8, 9, 8, 9], "color": "var(--series-3)"}], "chartTitle": "Факт по месяцам, 2026 (демо)", "months": ["Янв", "Фев", "Мар", "Апр", "Май", "Июн", "Июл", "Авг"]}, {"name": "Factum Auto Dealer", "desc": "Продажа авто в наличии", "demo": true, "span2": false, "metrics": [{"label": "Продано авто", "fact": 12, "plan": 15, "series": [10, 11, 13, 12, 14, 13, 14, 12], "color": "var(--series-4)"}], "color": "var(--series-4)", "chartTitle": "Факт по месяцам, 2026 (демо)", "months": ["Янв", "Фев", "Мар", "Апр", "Май", "Июн", "Июл", "Авг"]}];
+const PROJECTS = [{"name": "Factum Auto", "desc": "Импорт авто под заказ", "demo": false, "span2": true, "color": "var(--series-1)", "metrics": [{"label": "Депозиты", "fact": 18, "plan": 195, "planFact": 17, "planNote": "план по чистым депозитам: 195 · факт чистых: 17", "series": [185, 195, 225, 243, 225, 259, 249, 18], "color": "var(--series-1-lt)"}, {"label": "Покупки", "fact": 5, "plan": 195, "series": [140, 144, 179, 186, 187, 166, 174, 5], "color": "var(--series-1)"}], "chartTitle": "Факт по месяцам, 2026 (текущий месяц — идёт)", "months": ["Янв", "Фев", "Мар", "Апр", "Май", "Июн", "Июл", "Авг"]}, {"name": "Operator-EX", "desc": "Экспорт и продажи дилерам", "demo": false, "span2": false, "color": "var(--series-2)", "metrics": [{"label": "Куплено авто дилерами", "fact": 3, "plan": null, "series": [42, 17, 3], "color": "var(--series-2)"}], "chartTitle": "Факт по месяцам (аналитика ведётся с июня; текущий — идёт)", "months": ["Июн", "Июл", "Авг"]}, {"name": "СТО", "desc": "Кузовной ремонт и покраска", "demo": true, "span2": false, "color": "var(--series-3)", "metrics": [{"label": "Выдано авто в текущем месяце", "fact": 9, "plan": 12, "series": [6, 7, 7, 8, 8, 9, 8, 9], "color": "var(--series-3)"}], "chartTitle": "Факт по месяцам, 2026 (демо)", "months": ["Янв", "Фев", "Мар", "Апр", "Май", "Июн", "Июл", "Авг"]}, {"name": "Factum Auto Dealer", "desc": "Продажа авто в наличии", "demo": true, "span2": false, "metrics": [{"label": "Продано авто", "fact": 12, "plan": 15, "series": [10, 11, 13, 12, 14, 13, 14, 12], "color": "var(--series-4)"}], "color": "var(--series-4)", "chartTitle": "Факт по месяцам, 2026 (демо)", "months": ["Янв", "Фев", "Мар", "Апр", "Май", "Июн", "Июл", "Авг"]}];
 
 // ---------- прогресс календарного месяца (считается на дату открытия) ----------
 (function () {
@@ -262,7 +262,9 @@ function renderChart(p) {
 function renderMetric(m, projColor) {
   let planHtml;
   if (m.plan != null) {
-    const pct = Math.round(m.fact / m.plan * 100);
+    const factForPlan = (m.planFact != null) ? m.planFact : m.fact;
+    const pct = Math.round(factForPlan / m.plan * 100);
+    const note = m.planNote || `план на текущий месяц: ${m.plan}`;
     planHtml = `
       <div class="plan-row">
         <div class="meter" style="background: color-mix(in srgb, ${m.color} 18%, var(--surface-1));">
@@ -270,7 +272,7 @@ function renderMetric(m, projColor) {
         </div>
         <span class="plan-pct">${pct}%</span>
       </div>
-      <div class="plan-note">план на август: ${m.plan}</div>`;
+      <div class="plan-note">${esc(note)}</div>`;
   } else {
     planHtml = `<div class="no-plan">план в таблице не задан</div>`;
   }

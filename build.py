@@ -60,7 +60,9 @@ def parse_monthly(rows):
         if cur is None:
             continue
         crit = (row[1] if len(row) > 1 else "").strip()
-        if crit in ("Депозиты", "Покупки"):
+        if crit.startswith("Депозиты Факт"):
+            out[(cur[0], cur[1], "Депозиты чистые")] = num(row[2] if len(row) > 2 else "")
+        elif crit in ("Депозиты", "Покупки"):
             out[(cur[0], cur[1], crit)] = num(row[2] if len(row) > 2 else "")
     return out
 
@@ -98,8 +100,10 @@ def main():
 
     dep_fact = monthly.get(("fact", cm, "Депозиты")) or 0
     buy_fact = monthly.get(("fact", cm, "Покупки")) or 0
-    dep_plan = monthly.get(("plan", cm, "Депозиты"))
     buy_plan = monthly.get(("plan", cm, "Покупки"))
+    # выполнение плана по депозитам считается по чистым депозитам («Депозиты Фактические»)
+    dep_net_fact = monthly.get(("fact", cm, "Депозиты чистые")) or 0
+    dep_net_plan = monthly.get(("plan", cm, "Депозиты чистые"))
 
     b2b_months_nums = sorted(b2b)
     b2b_months = [MONTH_ABBR[m - 1] for m in b2b_months_nums]
@@ -111,7 +115,8 @@ def main():
             "name": "Factum Auto", "desc": "Импорт авто под заказ", "demo": False, "span2": True,
             "color": "var(--series-1)",
             "metrics": [
-                {"label": "Депозиты", "fact": dep_fact, "plan": dep_plan,
+                {"label": "Депозиты", "fact": dep_fact, "plan": dep_net_plan, "planFact": dep_net_fact,
+                 "planNote": f"план по чистым депозитам: {dep_net_plan} · факт чистых: {dep_net_fact}" if dep_net_plan else None,
                  "series": series("Депозиты"), "color": "var(--series-1-lt)"},
                 {"label": "Покупки", "fact": buy_fact, "plan": buy_plan,
                  "series": series("Покупки"), "color": "var(--series-1)"},
