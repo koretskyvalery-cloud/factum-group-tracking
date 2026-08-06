@@ -115,9 +115,9 @@ def main():
             "name": "Factum Auto", "desc": "Импорт авто под заказ", "demo": False, "span2": True,
             "color": "var(--series-1)",
             "metrics": [
-                {"label": "Депозиты", "fact": dep_fact, "plan": dep_net_plan, "planFact": dep_net_fact,
-                 "planNote": f"план по чистым депозитам: {dep_net_plan} · факт чистых: {dep_net_fact}" if dep_net_plan else None,
-                 "series": series("Депозиты"), "color": "var(--series-1-lt)"},
+                {"label": "Депозиты (чистые)", "fact": dep_net_fact, "plan": dep_net_plan,
+                 "planNote": f"план по чистым депозитам: {dep_net_plan} · всего внесено: {dep_fact}" if dep_net_plan else None,
+                 "series": series("Депозиты чистые"), "color": "var(--series-1-lt)"},
                 {"label": "Покупки", "fact": buy_fact, "plan": buy_plan,
                  "series": series("Покупки"), "color": "var(--series-1)"},
             ],

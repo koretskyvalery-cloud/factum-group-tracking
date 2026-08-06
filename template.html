@@ -385,9 +385,9 @@ function buildProjects(monthly, b2b, now) {
   return [
     { name: 'Factum Auto', desc: 'Импорт авто под заказ', demo: false, span2: true, color: 'var(--series-1)',
       metrics: [
-        { label: 'Депозиты', fact: depFact, plan: netPlan, planFact: netFact,
-          planNote: netPlan ? ('план по чистым депозитам: ' + netPlan + ' · факт чистых: ' + netFact) : null,
-          series: s('dep'), color: 'var(--series-1-lt)' },
+        { label: 'Депозиты (чистые)', fact: netFact, plan: netPlan,
+          planNote: netPlan ? ('план по чистым депозитам: ' + netPlan + ' · всего внесено: ' + depFact) : null,
+          series: s('net'), color: 'var(--series-1-lt)' },
         { label: 'Покупки', fact: buyFact, plan: buyPlan, series: s('buy'), color: 'var(--series-1)' },
       ],
       chartTitle: 'Факт по месяцам, 2026 (текущий месяц — идёт)', months: months },
