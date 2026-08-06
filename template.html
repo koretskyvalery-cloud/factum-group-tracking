@@ -63,13 +63,13 @@
     background: var(--page);
     color: var(--text-primary);
     min-height: 100vh;
-    padding: 40px 24px 56px;
+    padding: 24px 24px 32px;
   }
 
   .wrap { max-width: 1060px; margin: 0 auto; }
 
   header {
-    margin-bottom: 24px;
+    margin-bottom: 16px;
     display: flex;
     align-items: flex-end;
     justify-content: space-between;
@@ -86,9 +86,9 @@
     margin-bottom: 6px;
   }
 
-  h1 { font-size: 28px; font-weight: 700; letter-spacing: -0.01em; }
+  h1 { font-size: 24px; font-weight: 700; letter-spacing: -0.01em; }
 
-  .sub { margin-top: 8px; font-size: 14px; color: var(--text-secondary); }
+  .sub { margin-top: 6px; font-size: 13px; color: var(--text-secondary); }
 
   /* Общий блок: прогресс календарного месяца */
   .month-progress {
@@ -110,25 +110,23 @@
   .grid {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
-    gap: 16px;
+    gap: 12px;
   }
-  .span-2 { grid-column: span 2; }
   @media (max-width: 720px) {
     .grid { grid-template-columns: 1fr; }
-    .span-2 { grid-column: span 1; }
   }
 
   .card {
     background: var(--surface-1);
     border: 1px solid var(--border);
     border-radius: 14px;
-    padding: 22px 24px 18px;
+    padding: 16px 18px 12px;
   }
 
-  .card-head { display: flex; align-items: center; gap: 9px; }
-  .dot { width: 10px; height: 10px; border-radius: 50%; flex: none; }
-  .proj-name { font-size: 16px; font-weight: 650; }
-  .proj-desc { font-size: 13px; color: var(--text-muted); margin: 2px 0 18px; }
+  .card-head { display: flex; align-items: center; gap: 8px; }
+  .dot { width: 9px; height: 9px; border-radius: 50%; flex: none; }
+  .proj-name { font-size: 15px; font-weight: 650; }
+  .proj-desc { font-size: 12px; color: var(--text-muted); margin: 1px 0 12px; }
 
   .demo-badge {
     font-size: 11px;
@@ -139,10 +137,10 @@
     padding: 2px 10px;
   }
 
-  .metrics { display: flex; gap: 44px; flex-wrap: wrap; margin-bottom: 18px; }
-  .metric { min-width: 190px; flex: 0 1 auto; }
-  .metric-label { font-size: 13px; color: var(--text-secondary); margin-bottom: 4px; }
-  .metric-value { font-size: 40px; line-height: 1.05; font-weight: 600; letter-spacing: -0.01em; }
+  .metrics { display: flex; gap: 24px; flex-wrap: wrap; margin-bottom: 10px; }
+  .metric { min-width: 150px; flex: 1 1 150px; }
+  .metric-label { font-size: 12px; color: var(--text-secondary); margin-bottom: 3px; }
+  .metric-value { font-size: 32px; line-height: 1.05; font-weight: 600; letter-spacing: -0.01em; }
   .metric-value .of-plan { font-size: 15px; font-weight: 400; color: var(--text-muted); letter-spacing: 0; }
 
   /* Шкала выполнения плана */
@@ -164,11 +162,23 @@
 
   .no-plan { font-size: 12px; color: var(--text-muted); margin-top: 9px; }
 
-  /* График */
-  .chart-block { border-top: 1px solid var(--grid); padding-top: 14px; margin-top: 4px; }
+  /* График (свёрнут по умолчанию, раскрывается стрелочкой) */
+  .chart-block { border-top: 1px solid var(--grid); margin-top: 4px; }
+  .chart-toggle {
+    width: 100%;
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 8px;
+    background: none; border: none; cursor: pointer;
+    padding: 9px 0 7px;
+    font: inherit; font-size: 12px; color: var(--text-secondary);
+  }
+  .chart-toggle:hover { color: var(--text-primary); }
+  .chev { transition: transform 0.15s ease; color: var(--text-muted); font-size: 11px; }
+  .chart-open .chev { transform: rotate(180deg); }
+  .chart-wrap { padding-bottom: 4px; }
   .chart-head {
     display: flex; align-items: center; justify-content: space-between;
-    gap: 12px; margin-bottom: 8px; flex-wrap: wrap;
+    gap: 12px; margin-bottom: 6px; flex-wrap: wrap;
   }
   .chart-title { font-size: 12px; color: var(--text-muted); }
   .legend { display: flex; gap: 16px; }
@@ -238,7 +248,7 @@ function barPath(x, y, w, h, r) {
 }
 
 function renderChart(p) {
-  const W = p.span2 ? 920 : 440, H = 168, padT = 22, padB = 20, padX = 6;
+  const W = 440, H = 150, padT = 20, padB = 18, padX = 6;
   const plotH = H - padT - padB;
   const baseY = padT + plotH;
   const nGroups = p.months.length;
@@ -295,13 +305,16 @@ function renderMetric(m, projColor) {
     </div>`;
 }
 
+const openCharts = new Set(); // какие карточки развёрнуты — переживает live-перерисовку
+
 function renderCard(p) {
   const legend = p.metrics.length > 1
     ? `<div class="legend">${p.metrics.map(m =>
         `<div class="legend-item"><span class="swatch" style="background:${m.color}"></span>${esc(m.label)}</div>`).join('')}</div>`
     : '';
+  const open = openCharts.has(p.name);
   return `
-    <section class="card${p.span2 ? ' span-2' : ''}">
+    <section class="card">
       <div class="card-head">
         <span class="dot" style="background:${p.color}"></span>
         <span class="proj-name">${esc(p.name)}</span>
@@ -309,15 +322,33 @@ function renderCard(p) {
       </div>
       <div class="proj-desc">${esc(p.desc)}</div>
       <div class="metrics">${p.metrics.map(m => renderMetric(m, p.color)).join('')}</div>
-      <div class="chart-block">
-        <div class="chart-head">
-          <span class="chart-title">${esc(p.chartTitle)}</span>
-          ${legend}
+      <div class="chart-block${open ? ' chart-open' : ''}" data-proj="${esc(p.name)}">
+        <button class="chart-toggle" type="button" aria-expanded="${open}">
+          <span>Динамика по месяцам</span><span class="chev">▼</span>
+        </button>
+        <div class="chart-wrap" ${open ? '' : 'hidden'}>
+          <div class="chart-head">
+            <span class="chart-title">${esc(p.chartTitle)}</span>
+            ${legend}
+          </div>
+          <div class="chart">${renderChart(p)}</div>
         </div>
-        <div class="chart">${renderChart(p)}</div>
       </div>
     </section>`;
 }
+
+document.getElementById('grid').addEventListener('click', e => {
+  const btn = e.target.closest('.chart-toggle');
+  if (!btn) return;
+  const block = btn.closest('.chart-block');
+  const name = block.getAttribute('data-proj');
+  const wrap = block.querySelector('.chart-wrap');
+  const nowOpen = wrap.hidden;
+  wrap.hidden = !nowOpen;
+  block.classList.toggle('chart-open', nowOpen);
+  btn.setAttribute('aria-expanded', String(nowOpen));
+  if (nowOpen) openCharts.add(name); else openCharts.delete(name);
+});
 
 function renderAll(projects) {
   document.getElementById('grid').innerHTML = projects.map(renderCard).join('');
