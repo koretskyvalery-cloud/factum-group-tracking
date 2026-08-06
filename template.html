@@ -183,7 +183,7 @@
     <div>
       <div class="kicker">Factum Group</div>
       <h1>Factum Group Tracking</h1>
-      <div class="sub">Август 2026 · главные метрики месяца по проектам · данные на __STAMP__</div>
+      <div class="sub" id="sub">Август 2026 · главные метрики месяца по проектам · данные на __STAMP__</div>
     </div>
     <div class="month-progress">
       <div class="mp-label">Прогресс месяца (рабочие дни)</div>
@@ -319,7 +319,115 @@ function renderCard(p) {
     </section>`;
 }
 
-document.getElementById('grid').innerHTML = PROJECTS.map(renderCard).join('');
+function renderAll(projects) {
+  document.getElementById('grid').innerHTML = projects.map(renderCard).join('');
+}
+renderAll(PROJECTS); // сборка на момент публикации — фолбэк, если живые данные не загрузятся
+
+// ---------- живые данные напрямую из таблицы-прослойки (gviz, работает с любого домена) ----------
+const SHEET_ID = '10sbvUaWDkrJJqIC7ciuSsci21GuRMUV5P2TBhZCTF8U';
+const MONTH_NUM = {'Январь':1,'Февраль':2,'Март':3,'Апрель':4,'Май':5,'Июнь':6,'Июль':7,'Август':8,'Сентябрь':9,'Октябрь':10,'Ноябрь':11,'Декабрь':12};
+const MONTH_ABBR = ['Янв','Фев','Мар','Апр','Май','Июн','Июл','Авг','Сен','Окт','Ноя','Дек'];
+const MONTH_FULL = ['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
+
+function gvRows(tbl) {
+  return (tbl.table.rows || []).map(r => (r.c || []).map(c => (c && c.v != null) ? c.v : ''));
+}
+function num(v) {
+  if (typeof v === 'number') return Math.round(v);
+  const s = String(v).trim().replace(/\s/g, '').replace(',', '.');
+  if (!s) return null;
+  const f = parseFloat(s);
+  return isNaN(f) ? null : Math.round(f);
+}
+function monthOf(label) {
+  for (const name in MONTH_NUM) if (String(label).startsWith(name)) return MONTH_NUM[name];
+  return null;
+}
+function parseMonthly(rows) {
+  const out = {};
+  let cur = null;
+  for (const row of rows) {
+    const a = String(row[0] || '').trim();
+    if (a && a.indexOf('2026') > -1) {
+      const kind = a.indexOf('Факт') > -1 ? 'fact' : (a.indexOf('План') > -1 ? 'plan' : null);
+      const m = monthOf(a);
+      cur = (kind && m) ? kind + '|' + m : null;
+    }
+    if (!cur) continue;
+    const crit = String(row[1] || '').trim();
+    if (crit.startsWith('Депозиты Факт')) out[cur + '|net'] = num(row[2]);
+    else if (crit === 'Депозиты') out[cur + '|dep'] = num(row[2]);
+    else if (crit === 'Покупки') out[cur + '|buy'] = num(row[2]);
+  }
+  return out;
+}
+function parseB2B(rows) {
+  const out = {};
+  let cur = null;
+  for (const row of rows) {
+    const a = String(row[0] || '').trim();
+    if (a) { const m = monthOf(a); cur = (m && a.indexOf('Факт') > -1) ? m : null; }
+    if (cur && String(row[1] || '').trim() === 'Покупки') out[cur] = num(row[2]);
+  }
+  return out;
+}
+function buildProjects(monthly, b2b, now) {
+  const cm = now.getMonth() + 1;
+  const months = MONTH_ABBR.slice(0, cm);
+  const s = (key) => { const r = []; for (let m = 1; m <= cm; m++) r.push(monthly['fact|' + m + '|' + key]); return r; };
+  const depFact = monthly['fact|' + cm + '|dep'] || 0;
+  const buyFact = monthly['fact|' + cm + '|buy'] || 0;
+  const buyPlan = monthly['plan|' + cm + '|buy'] ?? null;
+  const netFact = monthly['fact|' + cm + '|net'] || 0;
+  const netPlan = monthly['plan|' + cm + '|net'] ?? null;
+  const bMonths = Object.keys(b2b).map(Number).sort((a, b) => a - b);
+  return [
+    { name: 'Factum Auto', desc: 'Импорт авто под заказ', demo: false, span2: true, color: 'var(--series-1)',
+      metrics: [
+        { label: 'Депозиты', fact: depFact, plan: netPlan, planFact: netFact,
+          planNote: netPlan ? ('план по чистым депозитам: ' + netPlan + ' · факт чистых: ' + netFact) : null,
+          series: s('dep'), color: 'var(--series-1-lt)' },
+        { label: 'Покупки', fact: buyFact, plan: buyPlan, series: s('buy'), color: 'var(--series-1)' },
+      ],
+      chartTitle: 'Факт по месяцам, 2026 (текущий месяц — идёт)', months: months },
+    { name: 'Operator-EX', desc: 'Экспорт и продажи дилерам', demo: false, span2: false, color: 'var(--series-2)',
+      metrics: [
+        { label: 'Куплено авто дилерами', fact: b2b[cm] || 0, plan: null, series: bMonths.map(m => b2b[m]), color: 'var(--series-2)' },
+      ],
+      chartTitle: 'Факт по месяцам (аналитика ведётся с июня; текущий — идёт)', months: bMonths.map(m => MONTH_ABBR[m - 1]) },
+    { name: 'СТО', desc: 'Кузовной ремонт и покраска', demo: true, span2: false, color: 'var(--series-3)',
+      metrics: [{ label: 'Выдано авто в текущем месяце', fact: 9, plan: 12, series: [6,7,7,8,8,9,8,9], color: 'var(--series-3)' }],
+      chartTitle: 'Факт по месяцам, 2026 (демо)', months: MONTH_ABBR.slice(0, 8) },
+    { name: 'Factum Auto Dealer', desc: 'Продажа авто в наличии', demo: true, span2: false, color: 'var(--series-4)',
+      metrics: [{ label: 'Продано авто', fact: 12, plan: 15, series: [10,11,13,12,14,13,14,12], color: 'var(--series-4)' }],
+      chartTitle: 'Факт по месяцам, 2026 (демо)', months: MONTH_ABBR.slice(0, 8) },
+  ];
+}
+
+const gvResults = {};
+window.__gvM = t => { gvResults.m = t; gvTryRender(); };
+window.__gvB = t => { gvResults.b = t; gvTryRender(); };
+function gvTryRender() {
+  if (!gvResults.m || !gvResults.b) return;
+  try {
+    const now = new Date();
+    renderAll(buildProjects(parseMonthly(gvRows(gvResults.m)), parseB2B(gvRows(gvResults.b)), now));
+    const t = String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0');
+    document.getElementById('sub').textContent =
+      MONTH_FULL[now.getMonth()] + ' ' + now.getFullYear() +
+      ' · главные метрики месяца по проектам · данные из таблицы, загружено в ' + t;
+  } catch (e) { console.log('live data error:', e); }
+}
+function gvLoad(sheet, handler) {
+  const s = document.createElement('script');
+  s.src = 'https://docs.google.com/spreadsheets/d/' + SHEET_ID + '/gviz/tq?tqx=responseHandler:' + handler +
+          '&sheet=' + encodeURIComponent(sheet) + '&range=A1:C300&headers=0&t=' + Date.now();
+  s.onerror = () => console.log('live data unavailable: ' + sheet);
+  document.body.appendChild(s);
+}
+gvLoad('Лист1', '__gvM');
+gvLoad('Лист2', '__gvB');
 </script>
 </body>
 </html>
