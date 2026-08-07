@@ -181,6 +181,27 @@
     gap: 12px; margin-bottom: 6px; flex-wrap: wrap;
   }
   .chart-title { font-size: 12px; color: var(--text-muted); }
+
+  .chart-tabs { display: flex; gap: 6px; margin-bottom: 8px; }
+  .chart-tab {
+    font: inherit; font-size: 12px; cursor: pointer;
+    padding: 4px 12px; border-radius: 999px;
+    border: 1px solid var(--border);
+    background: none; color: var(--text-secondary);
+  }
+  .chart-tab.active {
+    background: color-mix(in srgb, var(--series-1) 14%, var(--surface-1));
+    border-color: color-mix(in srgb, var(--series-1) 40%, var(--surface-1));
+    color: var(--text-primary); font-weight: 600;
+  }
+
+  .detail-link {
+    margin-left: auto;
+    font-size: 12px; font-weight: 600;
+    color: var(--series-1); text-decoration: none;
+    white-space: nowrap;
+  }
+  .detail-link:hover { text-decoration: underline; }
   .legend { display: flex; gap: 16px; }
   .legend-item { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text-secondary); }
   .swatch { width: 10px; height: 10px; border-radius: 3px; flex: none; }
@@ -306,6 +327,31 @@ function renderMetric(m, projColor) {
 }
 
 const openCharts = new Set(); // какие карточки развёрнуты — переживает live-перерисовку
+const chartTab = {};          // выбранная вкладка графика по имени проекта
+let currentProjects = null;   // последний отрисованный набор данных
+
+// хронология продаж: среднее купленных авто за месяц, по кварталам (источник — «Общий зачет 2025/2026»)
+// фолбэк-снимок; при загрузке живых данных пересчитывается
+let SALES_QUARTERS = { labels: ["К1'25","К2'25","К3'25","К4'25","К1'26","К2'26","К3'26*"], vals: [108,133,172,146,155,180,176] };
+
+function quarterSeries(rows, now) {
+  const per = {};
+  rows.forEach(r => { const y = Number(r[0]); if (y) per[y] = r.slice(1, 13); });
+  const curY = now.getFullYear(), curM = now.getMonth() + 1;
+  const labels = [], vals = [];
+  Object.keys(per).map(Number).sort().forEach(y => {
+    for (let q = 0; q < 4; q++) {
+      const ms = [q * 3 + 1, q * 3 + 2, q * 3 + 3];
+      const use = ms.filter(m => y < curY || (y === curY && m < curM))
+                    .map(m => per[y][m - 1]).filter(v => typeof v === 'number');
+      if (!use.length) continue;
+      const isPartial = (y === curY) && ms.some(m => m >= curM);
+      labels.push('К' + (q + 1) + "'" + String(y).slice(2) + (isPartial ? '*' : ''));
+      vals.push(Math.round(use.reduce((a, b) => a + b, 0) / use.length));
+    }
+  });
+  return { labels, vals };
+}
 
 function renderCard(p) {
   const legend = p.metrics.length > 1
@@ -313,31 +359,59 @@ function renderCard(p) {
         `<div class="legend-item"><span class="swatch" style="background:${m.color}"></span>${esc(m.label)}</div>`).join('')}</div>`
     : '';
   const open = openCharts.has(p.name);
+  const hasAlt = p.name === 'Factum Auto';
+  const mode = hasAlt ? (chartTab[p.name] || 'months') : 'months';
+  let chartHtml, chartTitle = p.chartTitle, legendHtml = legend;
+  if (mode === 'quarters') {
+    chartHtml = renderChart({
+      metrics: [{ label: 'Среднее продаж/мес', series: SALES_QUARTERS.vals, color: 'var(--series-1)' }],
+      months: SALES_QUARTERS.labels,
+      chartTitle: 'Хронология продаж',
+    });
+    chartTitle = 'Среднее кол-во купленных авто за месяц, по кварталам (* — квартал не завершён)';
+    legendHtml = '';
+  } else {
+    chartHtml = renderChart(p);
+  }
+  const tabs = hasAlt ? `
+        <div class="chart-tabs">
+          <button class="chart-tab${mode === 'months' ? ' active' : ''}" type="button" data-mode="months">По месяцам</button>
+          <button class="chart-tab${mode === 'quarters' ? ' active' : ''}" type="button" data-mode="quarters">Хронология продаж</button>
+        </div>` : '';
   return `
     <section class="card">
       <div class="card-head">
         <span class="dot" style="background:${p.color}"></span>
         <span class="proj-name">${esc(p.name)}</span>
         ${p.demo ? '<span class="demo-badge">демо-данные</span>' : ''}
+        ${hasAlt ? '<a class="detail-link" href="factum-auto.html">Детальная аналитика →</a>' : ''}
       </div>
       <div class="proj-desc">${esc(p.desc)}</div>
       <div class="metrics">${p.metrics.map(m => renderMetric(m, p.color)).join('')}</div>
       <div class="chart-block${open ? ' chart-open' : ''}" data-proj="${esc(p.name)}">
         <button class="chart-toggle" type="button" aria-expanded="${open}">
-          <span>Динамика по месяцам</span><span class="chev">▼</span>
+          <span>Динамика</span><span class="chev">▼</span>
         </button>
         <div class="chart-wrap" ${open ? '' : 'hidden'}>
+          ${tabs}
           <div class="chart-head">
-            <span class="chart-title">${esc(p.chartTitle)}</span>
-            ${legend}
+            <span class="chart-title">${esc(chartTitle)}</span>
+            ${legendHtml}
           </div>
-          <div class="chart">${renderChart(p)}</div>
+          <div class="chart">${chartHtml}</div>
         </div>
       </div>
     </section>`;
 }
 
 document.getElementById('grid').addEventListener('click', e => {
+  const tab = e.target.closest('.chart-tab');
+  if (tab) {
+    const name = tab.closest('.chart-block').getAttribute('data-proj');
+    chartTab[name] = tab.getAttribute('data-mode');
+    if (currentProjects) renderAll(currentProjects);
+    return;
+  }
   const btn = e.target.closest('.chart-toggle');
   if (!btn) return;
   const block = btn.closest('.chart-block');
@@ -351,6 +425,7 @@ document.getElementById('grid').addEventListener('click', e => {
 });
 
 function renderAll(projects) {
+  currentProjects = projects;
   document.getElementById('grid').innerHTML = projects.map(renderCard).join('');
 }
 renderAll(PROJECTS); // сборка на момент публикации — фолбэк, если живые данные не загрузятся
@@ -439,6 +514,13 @@ function buildProjects(monthly, b2b, now) {
 const gvResults = {};
 window.__gvM = t => { gvResults.m = t; gvTryRender(); };
 window.__gvB = t => { gvResults.b = t; gvTryRender(); };
+window.__gvS = t => {
+  try {
+    const q = quarterSeries(gvRows(t), new Date());
+    if (q.vals.length) SALES_QUARTERS = q;
+  } catch (e) { console.log('sales history error:', e); }
+  gvTryRender();
+};
 function gvTryRender() {
   if (!gvResults.m || !gvResults.b) return;
   try {
@@ -459,6 +541,7 @@ function gvLoad(sheet, handler) {
 }
 gvLoad('Лист1', '__gvM');
 gvLoad('Лист2', '__gvB');
+gvLoad('Лист3', '__gvS');
 </script>
 </body>
 </html>
