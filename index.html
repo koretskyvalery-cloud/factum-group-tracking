@@ -214,7 +214,7 @@
     <div>
       <div class="kicker">Factum Group</div>
       <h1>Factum Group Tracking</h1>
-      <div class="sub" id="sub">Август 2026 · главные метрики месяца по проектам · данные на 07.08.2026 23:18 (Киев)</div>
+      <div class="sub" id="sub">Август 2026 · главные метрики месяца по проектам · данные на 07.08.2026 23:28 (Киев)</div>
     </div>
     <div class="month-progress">
       <div class="mp-label">Прогресс месяца (рабочие дни)</div>
@@ -330,27 +330,33 @@ const openCharts = new Set(); // какие карточки развёрнут�
 const chartTab = {};          // выбранная вкладка графика по имени проекта
 let currentProjects = null;   // последний отрисованный набор данных
 
-// хронология продаж: среднее купленных авто за месяц, по кварталам (источник — «Общий зачет 2025/2026»)
-// фолбэк-снимок; при загрузке живых данных пересчитывается
-let SALES_QUARTERS = { labels: ["К1'25","К2'25","К3'25","К4'25","К1'26","К2'26","К3'26*"], vals: [108,133,172,146,155,180,176] };
+// хронология продаж: среднее купленных авто за месяц, по кварталам, 2025 vs 2026
+// (источник — «Общий зачет 2025/2026»); фолбэк-снимок, при загрузке живых данных пересчитывается
+let SALES_QUARTERS = {
+  labels: ['К1', 'К2', 'К3', 'К4'],
+  years: { 2025: [108, 133, 172, 146], 2026: [155, 180, 176, null] },
+  note: '* К3 2026 не завершён — среднее по закрытым месяцам',
+};
 
-function quarterSeries(rows, now) {
+function quarterTable(rows, now) {
   const per = {};
   rows.forEach(r => { const y = Number(r[0]); if (y) per[y] = r.slice(1, 13); });
   const curY = now.getFullYear(), curM = now.getMonth() + 1;
-  const labels = [], vals = [];
+  const out = { labels: ['К1', 'К2', 'К3', 'К4'], years: {}, note: '' };
   Object.keys(per).map(Number).sort().forEach(y => {
+    const vals = [];
     for (let q = 0; q < 4; q++) {
       const ms = [q * 3 + 1, q * 3 + 2, q * 3 + 3];
       const use = ms.filter(m => y < curY || (y === curY && m < curM))
                     .map(m => per[y][m - 1]).filter(v => typeof v === 'number');
-      if (!use.length) continue;
-      const isPartial = (y === curY) && ms.some(m => m >= curM);
-      labels.push('К' + (q + 1) + "'" + String(y).slice(2) + (isPartial ? '*' : ''));
+      if (!use.length) { vals.push(null); continue; }
+      if (y === curY && ms.some(m => m >= curM))
+        out.note = '* К' + (q + 1) + ' ' + y + ' не завершён — среднее по закрытым месяцам';
       vals.push(Math.round(use.reduce((a, b) => a + b, 0) / use.length));
     }
+    out.years[y] = vals;
   });
-  return { labels, vals };
+  return out;
 }
 
 function renderCard(p) {
@@ -363,13 +369,16 @@ function renderCard(p) {
   const mode = hasAlt ? (chartTab[p.name] || 'months') : 'months';
   let chartHtml, chartTitle = p.chartTitle, legendHtml = legend;
   if (mode === 'quarters') {
-    chartHtml = renderChart({
-      metrics: [{ label: 'Среднее продаж/мес', series: SALES_QUARTERS.vals, color: 'var(--series-1)' }],
-      months: SALES_QUARTERS.labels,
-      chartTitle: 'Хронология продаж',
-    });
-    chartTitle = 'Среднее кол-во купленных авто за месяц, по кварталам (* — квартал не завершён)';
-    legendHtml = '';
+    const ys = Object.keys(SALES_QUARTERS.years).sort();
+    const qMetrics = ys.map((y, i) => ({
+      label: y,
+      series: SALES_QUARTERS.years[y],
+      color: i === ys.length - 1 ? 'var(--series-1)' : 'var(--series-1-lt)',
+    }));
+    chartHtml = renderChart({ metrics: qMetrics, months: SALES_QUARTERS.labels, chartTitle: 'Хронология продаж' });
+    chartTitle = 'Среднее купленных авто за месяц' + (SALES_QUARTERS.note ? ' · ' + SALES_QUARTERS.note : '');
+    legendHtml = `<div class="legend">${qMetrics.map(m =>
+      `<div class="legend-item"><span class="swatch" style="background:${m.color}"></span>${esc(m.label)}</div>`).join('')}</div>`;
   } else {
     chartHtml = renderChart(p);
   }
@@ -516,8 +525,8 @@ window.__gvM = t => { gvResults.m = t; gvTryRender(); };
 window.__gvB = t => { gvResults.b = t; gvTryRender(); };
 window.__gvS = t => {
   try {
-    const q = quarterSeries(gvRows(t), new Date());
-    if (q.vals.length) SALES_QUARTERS = q;
+    const q = quarterTable(gvRows(t), new Date());
+    if (Object.keys(q.years).length) SALES_QUARTERS = q;
   } catch (e) { console.log('sales history error:', e); }
   gvTryRender();
 };
@@ -532,16 +541,16 @@ function gvTryRender() {
       ' · главные метрики месяца по проектам · данные из таблицы, загружено в ' + t;
   } catch (e) { console.log('live data error:', e); }
 }
-function gvLoad(sheet, handler) {
+function gvLoad(sheet, handler, range) {
   const s = document.createElement('script');
   s.src = 'https://docs.google.com/spreadsheets/d/' + SHEET_ID + '/gviz/tq?tqx=responseHandler:' + handler +
-          '&sheet=' + encodeURIComponent(sheet) + '&range=A1:C300&headers=0&t=' + Date.now();
+          '&sheet=' + encodeURIComponent(sheet) + '&range=' + (range || 'A1:C300') + '&headers=0&t=' + Date.now();
   s.onerror = () => console.log('live data unavailable: ' + sheet);
   document.body.appendChild(s);
 }
 gvLoad('Лист1', '__gvM');
 gvLoad('Лист2', '__gvB');
-gvLoad('Лист3', '__gvS');
+gvLoad('Лист3', '__gvS', 'A1:M10');
 </script>
 </body>
 </html>
