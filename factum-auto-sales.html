@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Factum Auto · детальная аналитика</title>
+<title>Отдел продаж · Factum Auto</title>
 <style>
   :root {
     color-scheme: light;
@@ -61,34 +61,38 @@
 </head>
 <body>
 <div class="wrap">
-  <a class="back" href="index.html">← Factum Group Tracking</a>
-  <h1><span class="dot"></span>Factum Auto · детальная аналитика</h1>
-  <div class="sub" id="sub">Импорт авто под заказ</div>
+  <a class="back" href="factum-auto.html">← Factum Auto</a>
+  <h1><span class="dot"></span>Отдел продаж · Factum Auto</h1>
+  <div class="sub" id="sub">Депозиты и покупки автомобилей</div>
 
-  <h2>Отделы</h2>
-  <div class="depts">
-    <a class="dept" href="factum-auto-hr.html">
-      <div class="dept-head"><span class="dept-name">HR-отдел</span><span class="arrow">→</span></div>
-      <div class="dept-mini">
-        <div class="mini"><div class="mini-label">Активных менеджеров</div><div class="mini-value" id="hr-mgr">—</div></div>
-        <div class="mini"><div class="mini-label">Вакансии</div><div class="mini-value">4 <span class="demo-badge">демо</span></div></div>
+  <section class="card">
+    <div class="metrics">
+      <div class="metric">
+        <div class="metric-label">Депозиты (чистые)</div>
+        <div class="metric-value" id="sd-net">—</div>
       </div>
-    </a>
-    <a class="dept" href="factum-auto-marketing.html">
-      <div class="dept-head"><span class="dept-name">Маркетинг</span><span class="arrow">→</span></div>
-      <div class="dept-mini">
-        <div class="mini"><div class="mini-label">Лиды за месяц</div><div class="mini-value" id="mk-leads">—</div></div>
-        <div class="mini"><div class="mini-label">CR в депозит</div><div class="mini-value" id="mk-cr">—</div></div>
+      <div class="metric">
+        <div class="metric-label">Покупки</div>
+        <div class="metric-value" id="sd-buy">—</div>
       </div>
-    </a>
-    <a class="dept" href="factum-auto-sales.html">
-      <div class="dept-head"><span class="dept-name">Отдел продаж</span><span class="arrow">→</span></div>
-      <div class="dept-mini">
-        <div class="mini"><div class="mini-label">Покупки</div><div class="mini-value" id="sd-buy">—</div></div>
-        <div class="mini"><div class="mini-label">Депозиты (чистые)</div><div class="mini-value" id="sd-net">—</div></div>
+      <div class="metric">
+        <div class="metric-label">Активных менеджеров</div>
+        <div class="metric-value" id="sd-mgr">—</div>
       </div>
-    </a>
-  </div>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="chart-title">Депозиты (чистые) и покупки по месяцам, 2026 (текущий — идёт)</div>
+    <div class="chart" id="sd-chart"></div>
+  </section>
+
+  <h2>Аналитика продаж в ретроспективе</h2>
+  <section class="card">
+    <div class="chart-title">Среднее количество купленных автомобилей за один месяц, по кварталам · источник: «Общий зачет 2025/2026»</div>
+    <div class="chart" id="q-chart"></div>
+    <div class="note" id="q-note"></div>
+  </section>
 
 </div>
 <script>
@@ -193,19 +197,67 @@ function stampSub(prefix) {
 }
 
 
+let Q = { labels: ['К1','К2','К3','К4'], years: { 2025:[108,133,172,146], 2026:[155,180,176,null] },
+          note: '* К3 2026 не завершён — среднее по закрытым месяцам' };
+function quarterTable(rows, now) {
+  const per = {};
+  rows.forEach(r => { const y = Number(r[0]); if (y) per[y] = r.slice(1, 13); });
+  const curY = now.getFullYear(), curM = now.getMonth() + 1;
+  const out = { labels: ['К1','К2','К3','К4'], years: {}, note: '' };
+  Object.keys(per).map(Number).sort().forEach(y => {
+    const vals = [];
+    for (let q = 0; q < 4; q++) {
+      const ms = [q*3+1, q*3+2, q*3+3];
+      const use = ms.filter(m => y < curY || (y === curY && m < curM))
+                    .map(m => per[y][m-1]).filter(v => typeof v === 'number');
+      if (!use.length) { vals.push(null); continue; }
+      if (y === curY && ms.some(m => m >= curM))
+        out.note = '* К' + (q+1) + ' ' + y + ' не завершён — среднее по закрытым месяцам';
+      vals.push(Math.round(use.reduce((a,b) => a+b, 0) / use.length));
+    }
+    out.years[y] = vals;
+  });
+  return out;
+}
+function drawQuarters() {
+  const ys = Object.keys(Q.years).sort();
+  const seriesArr = ys.map((y, i) => ({ label: y, vals: Q.years[y],
+    color: i === ys.length - 1 ? 'var(--series-1)' : 'var(--series-1-lt)' }));
+  document.getElementById('q-chart').innerHTML = groupedColumns(Q.labels, seriesArr);
+  const prev = Q.years[ys[0]] || [], cur = Q.years[ys[ys.length-1]] || [];
+  const parts = [];
+  for (let i = 0; i < 4; i++) {
+    if (typeof prev[i] === 'number' && typeof cur[i] === 'number') {
+      const g = Math.round((cur[i] / prev[i] - 1) * 100);
+      parts.push('К' + (i+1) + ': ' + (g >= 0 ? '+' : '') + g + '%');
+    }
+  }
+  document.getElementById('q-note').textContent =
+    (parts.length ? 'Рост ' + ys[ys.length-1] + ' к ' + ys[0] + ' — ' + parts.join(' · ') + '. ' : '') + (Q.note || '');
+}
+window.__gvS = t => {
+  try { const q = quarterTable(gvRows(t), new Date()); if (Object.keys(q.years).length) { Q = q; drawQuarters(); } }
+  catch (e) { console.log(e); }
+};
+
 window.__gvM = t => {
   try {
     const F = parseFacts(gvRows(t));
     const cm = new Date().getMonth() + 1;
-    if (F.mgr[cm] != null) document.getElementById('hr-mgr').textContent = F.mgr[cm];
-    if (F.leads[cm] != null) document.getElementById('mk-leads').textContent = F.leads[cm];
-    if (F.crDep[cm] != null) document.getElementById('mk-cr').textContent = String(F.crDep[cm]).replace('.', ',') + '%';
-    if (F.buy[cm] != null) document.getElementById('sd-buy').textContent = F.buy[cm];
     if (F.net[cm] != null) document.getElementById('sd-net').textContent = F.net[cm];
-    stampSub('Импорт авто под заказ');
+    if (F.buy[cm] != null) document.getElementById('sd-buy').textContent = F.buy[cm];
+    if (F.mgr[cm] != null) document.getElementById('sd-mgr').textContent = F.mgr[cm];
+    const months = MONTH_ABBR.slice(0, cm);
+    document.getElementById('sd-chart').innerHTML = groupedColumns(months, [
+      { label: 'Депозиты (чистые)', vals: series(F.net, cm), color: 'var(--series-1-lt)' },
+      { label: 'Покупки', vals: series(F.buy, cm), color: 'var(--series-1)' },
+    ]);
+    stampSub('Депозиты и покупки автомобилей');
   } catch (e) { console.log(e); }
 };
+drawQuarters();
 gvLoad('Лист1', '__gvM');
+gvLoad('Лист3', '__gvS', 'A1:M10');
 </script>
 </body>
 </html>

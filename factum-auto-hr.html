@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Factum Auto · детальная аналитика</title>
+<title>HR-отдел · Factum Auto</title>
 <style>
   :root {
     color-scheme: light;
@@ -61,34 +61,33 @@
 </head>
 <body>
 <div class="wrap">
-  <a class="back" href="index.html">← Factum Group Tracking</a>
-  <h1><span class="dot"></span>Factum Auto · детальная аналитика</h1>
-  <div class="sub" id="sub">Импорт авто под заказ</div>
+  <a class="back" href="factum-auto.html">← Factum Auto</a>
+  <h1><span class="dot" style="background: var(--series-3)"></span>HR-отдел · Factum Auto</h1>
+  <div class="sub" id="sub">Найм и состав команды продаж</div>
 
-  <h2>Отделы</h2>
-  <div class="depts">
-    <a class="dept" href="factum-auto-hr.html">
-      <div class="dept-head"><span class="dept-name">HR-отдел</span><span class="arrow">→</span></div>
-      <div class="dept-mini">
-        <div class="mini"><div class="mini-label">Активных менеджеров</div><div class="mini-value" id="hr-mgr">—</div></div>
-        <div class="mini"><div class="mini-label">Вакансии</div><div class="mini-value">4 <span class="demo-badge">демо</span></div></div>
+  <section class="card">
+    <div class="metrics">
+      <div class="metric">
+        <div class="metric-label">Активных менеджеров</div>
+        <div class="metric-value" id="hr-managers">—</div>
+        <div class="metric-note">с депозитами в текущем месяце</div>
       </div>
-    </a>
-    <a class="dept" href="factum-auto-marketing.html">
-      <div class="dept-head"><span class="dept-name">Маркетинг</span><span class="arrow">→</span></div>
-      <div class="dept-mini">
-        <div class="mini"><div class="mini-label">Лиды за месяц</div><div class="mini-value" id="mk-leads">—</div></div>
-        <div class="mini"><div class="mini-label">CR в депозит</div><div class="mini-value" id="mk-cr">—</div></div>
+      <div class="metric">
+        <div class="metric-label">Открытые вакансии</div>
+        <div class="metric-value">4 <span class="demo-badge">демо</span></div>
       </div>
-    </a>
-    <a class="dept" href="factum-auto-sales.html">
-      <div class="dept-head"><span class="dept-name">Отдел продаж</span><span class="arrow">→</span></div>
-      <div class="dept-mini">
-        <div class="mini"><div class="mini-label">Покупки</div><div class="mini-value" id="sd-buy">—</div></div>
-        <div class="mini"><div class="mini-label">Депозиты (чистые)</div><div class="mini-value" id="sd-net">—</div></div>
+      <div class="metric">
+        <div class="metric-label">Наймы за месяц</div>
+        <div class="metric-value">2 <span class="demo-badge">демо</span></div>
       </div>
-    </a>
-  </div>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="chart-title">Активные менеджеры по месяцам, 2026 (текущий — идёт)</div>
+    <div class="chart" id="hr-chart"></div>
+    <div class="note">Показатели найма (вакансии, наймы, текучесть) пока демо — источник данных HR настроим отдельно.</div>
+  </section>
 
 </div>
 <script>
@@ -197,12 +196,10 @@ window.__gvM = t => {
   try {
     const F = parseFacts(gvRows(t));
     const cm = new Date().getMonth() + 1;
-    if (F.mgr[cm] != null) document.getElementById('hr-mgr').textContent = F.mgr[cm];
-    if (F.leads[cm] != null) document.getElementById('mk-leads').textContent = F.leads[cm];
-    if (F.crDep[cm] != null) document.getElementById('mk-cr').textContent = String(F.crDep[cm]).replace('.', ',') + '%';
-    if (F.buy[cm] != null) document.getElementById('sd-buy').textContent = F.buy[cm];
-    if (F.net[cm] != null) document.getElementById('sd-net').textContent = F.net[cm];
-    stampSub('Импорт авто под заказ');
+    if (F.mgr[cm] != null) document.getElementById('hr-managers').textContent = F.mgr[cm];
+    const months = MONTH_ABBR.slice(0, cm);
+    document.getElementById('hr-chart').innerHTML = columns(months, series(F.mgr, cm), 'var(--series-3)');
+    stampSub('Найм и состав команды продаж');
   } catch (e) { console.log(e); }
 };
 gvLoad('Лист1', '__gvM');
