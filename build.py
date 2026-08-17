@@ -134,26 +134,6 @@ def main():
             "chartTitle": "Факт по месяцам (аналитика ведётся с июня; текущий — идёт)",
             "months": b2b_months,
         },
-        {
-            "name": "СТО", "desc": "Кузовной ремонт и покраска", "demo": True, "span2": False,
-            "color": "var(--series-3)",
-            "metrics": [
-                {"label": "Выдано авто в текущем месяце", "fact": 9, "plan": 12,
-                 "series": [6, 7, 7, 8, 8, 9, 8, 9], "color": "var(--series-3)"},
-            ],
-            "chartTitle": "Факт по месяцам, 2026 (демо)",
-            "months": [MONTH_ABBR[i] for i in range(8)],
-        },
-        {
-            "name": "Factum Auto Dealer", "desc": "Продажа авто в наличии", "demo": True, "span2": False,
-            "metrics": [
-                {"label": "Продано авто", "fact": 12, "plan": 15,
-                 "series": [10, 11, 13, 12, 14, 13, 14, 12], "color": "var(--series-4)"},
-            ],
-            "color": "var(--series-4)",
-            "chartTitle": "Факт по месяцам, 2026 (демо)",
-            "months": [MONTH_ABBR[i] for i in range(8)],
-        },
     ]
 
     stamp = now.strftime("%d.%m.%Y %H:%M") + " (Киев)"

@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Factum Group Tracking</title>
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
 <style>
   :root {
     color-scheme: light;
@@ -20,6 +21,9 @@
     --series-2:       #eb6834;  /* Operator-EX */
     --series-3:       #1baf7a;  /* СТО */
     --series-4:       #eda100;  /* Factum Auto Dealer */
+    --status-good:    #0ca30c;  /* статус выполнения: в темпе */
+    --status-warn:    #fab219;  /* лёгкое отставание */
+    --status-bad:     #d03b3b;  /* сильное отставание */
   }
   @media (prefers-color-scheme: dark) {
     :root:where(:not([data-theme="light"])) {
@@ -159,6 +163,10 @@
   }
   .plan-pct { font-size: 13px; font-weight: 650; min-width: 44px; text-align: right; }
   .plan-note { font-size: 12px; color: var(--text-muted); margin-top: 5px; }
+  .meter-mark {
+    position: absolute; top: -3px; bottom: -3px; width: 2px;
+    background: var(--text-primary); opacity: 0.55; border-radius: 1px;
+  }
 
   .no-plan { font-size: 12px; color: var(--text-muted); margin-top: 9px; }
 
@@ -214,7 +222,7 @@
     <div>
       <div class="kicker">Factum Group</div>
       <h1>Factum Group Tracking</h1>
-      <div class="sub" id="sub">Август 2026 · главные метрики месяца по проектам · данные на 17.08.2026 21:03 (Киев)</div>
+      <div class="sub" id="sub">Август 2026 · главные метрики месяца по проектам · данные на 17.08.2026 21:43 (Киев)</div>
     </div>
     <div class="month-progress">
       <div class="mp-label">Прогресс месяца (рабочие дни)</div>
@@ -235,9 +243,10 @@
 // ---------- данные (снимок из Google-таблицы «Менеджеры отчет», 4 августа 2026) ----------
 const MONTHS = ['Янв','Фев','Мар','Апр','Май','Июн','Июл','Авг'];
 
-const PROJECTS = [{"name": "Factum Auto", "desc": "Импорт авто под заказ", "demo": false, "span2": true, "color": "var(--series-1)", "metrics": [{"label": "Депозиты (чистые)", "fact": 75, "plan": 195, "planNote": "план по чистым депозитам: 195 · всего внесено: 92", "series": [149, 161, 166, 189, 171, 194, 186, 75], "color": "var(--series-1-lt)"}, {"label": "Покупки", "fact": 68, "plan": 195, "series": [140, 144, 179, 186, 187, 166, 176, 68], "color": "var(--series-1)"}], "chartTitle": "Факт по месяцам, 2026 (текущий месяц — идёт)", "months": ["Янв", "Фев", "Мар", "Апр", "Май", "Июн", "Июл", "Авг"]}, {"name": "Operator-EX", "desc": "Экспорт и продажи дилерам", "demo": false, "span2": false, "color": "var(--series-2)", "metrics": [{"label": "Куплено авто дилерами", "fact": 7, "plan": null, "series": [42, 17, 7], "color": "var(--series-2)"}], "chartTitle": "Факт по месяцам (аналитика ведётся с июня; текущий — идёт)", "months": ["Июн", "Июл", "Авг"]}, {"name": "СТО", "desc": "Кузовной ремонт и покраска", "demo": true, "span2": false, "color": "var(--series-3)", "metrics": [{"label": "Выдано авто в текущем месяце", "fact": 9, "plan": 12, "series": [6, 7, 7, 8, 8, 9, 8, 9], "color": "var(--series-3)"}], "chartTitle": "Факт по месяцам, 2026 (демо)", "months": ["Янв", "Фев", "Мар", "Апр", "Май", "Июн", "Июл", "Авг"]}, {"name": "Factum Auto Dealer", "desc": "Продажа авто в наличии", "demo": true, "span2": false, "metrics": [{"label": "Продано авто", "fact": 12, "plan": 15, "series": [10, 11, 13, 12, 14, 13, 14, 12], "color": "var(--series-4)"}], "color": "var(--series-4)", "chartTitle": "Факт по месяцам, 2026 (демо)", "months": ["Янв", "Фев", "Мар", "Апр", "Май", "Июн", "Июл", "Авг"]}];
+const PROJECTS = [{"name": "Factum Auto", "desc": "Импорт авто под заказ", "demo": false, "span2": true, "color": "var(--series-1)", "metrics": [{"label": "Депозиты (чистые)", "fact": 22, "plan": 195, "planNote": "план по чистым депозитам: 195 · всего внесено: 23", "series": [149, 161, 166, 189, 171, 194, 186, 22], "color": "var(--series-1-lt)"}, {"label": "Покупки", "fact": 9, "plan": 195, "series": [140, 144, 179, 186, 187, 166, 174, 9], "color": "var(--series-1)"}], "chartTitle": "Факт по месяцам, 2026 (текущий месяц — идёт)", "months": ["Янв", "Фев", "Мар", "Апр", "Май", "Июн", "Июл", "Авг"]}, {"name": "Operator-EX", "desc": "Экспорт и продажи дилерам", "demo": false, "span2": false, "color": "var(--series-2)", "metrics": [{"label": "Куплено авто дилерами", "fact": 4, "plan": null, "series": [42, 17, 4], "color": "var(--series-2)"}], "chartTitle": "Факт по месяцам (аналитика ведётся с июня; текущий — идёт)", "months": ["Июн", "Июл", "Авг"]}];
 
 // ---------- прогресс месяца по рабочим дням, пн–пт (считается на дату открытия) ----------
+window.MONTH_PCT = 0;
 (function () {
   const now = new Date();
   const y = now.getFullYear(), m = now.getMonth();
@@ -251,6 +260,7 @@ const PROJECTS = [{"name": "Factum Auto", "desc": "Импорт авто под 
     }
   }
   const pct = total ? Math.round(elapsed / total * 100) : 0;
+  window.MONTH_PCT = pct;
   const todayIsWorkday = now.getDay() >= 1 && now.getDay() <= 5;
   document.getElementById('mp-pct').textContent = pct + '%';
   document.getElementById('mp-fill').style.width = pct + '%';
@@ -307,14 +317,21 @@ function renderMetric(m, projColor) {
     const factForPlan = (m.planFact != null) ? m.planFact : m.fact;
     const pct = Math.round(factForPlan / m.plan * 100);
     const note = m.planNote || `план на текущий месяц: ${m.plan}`;
+    // цвет — по опережению/отставанию от темпа месяца (риска на шкале)
+    const mp = window.MONTH_PCT || 0;
+    const ratio = mp > 0 ? pct / mp : 1;
+    const sColor = ratio >= 0.9 ? 'var(--status-good)' : (ratio >= 0.6 ? 'var(--status-warn)' : 'var(--status-bad)');
+    const sWord = ratio >= 0.9 ? 'в темпе' : (ratio >= 0.6 ? 'лёгкое отставание' : 'отставание');
     planHtml = `
       <div class="plan-row">
-        <div class="meter" style="background: color-mix(in srgb, ${m.color} 18%, var(--surface-1));">
-          <span class="meter-fill" style="background: ${m.color}; width: ${Math.min(100, pct)}%;"></span>
+        <div class="meter" title="Риска — темп месяца по рабочим дням (${mp}%). Статус: ${sWord}"
+             style="background: color-mix(in srgb, ${sColor} 16%, var(--surface-1));">
+          <span class="meter-fill" style="background: ${sColor}; width: ${Math.min(100, pct)}%;"></span>
+          ${mp > 0 ? `<span class="meter-mark" style="left: ${Math.min(99, mp)}%"></span>` : ''}
         </div>
         <span class="plan-pct">${pct}%</span>
       </div>
-      <div class="plan-note">${esc(note)}</div>`;
+      <div class="plan-note">${esc(note)} · темп месяца: ${mp}%</div>`;
   } else {
     planHtml = `<div class="no-plan">план в таблице не задан</div>`;
   }
@@ -511,12 +528,6 @@ function buildProjects(monthly, b2b, now) {
         { label: 'Куплено авто дилерами', fact: b2b[cm] || 0, plan: null, series: bMonths.map(m => b2b[m]), color: 'var(--series-2)' },
       ],
       chartTitle: 'Факт по месяцам (аналитика ведётся с июня; текущий — идёт)', months: bMonths.map(m => MONTH_ABBR[m - 1]) },
-    { name: 'СТО', desc: 'Кузовной ремонт и покраска', demo: true, span2: false, color: 'var(--series-3)',
-      metrics: [{ label: 'Выдано авто в текущем месяце', fact: 9, plan: 12, series: [6,7,7,8,8,9,8,9], color: 'var(--series-3)' }],
-      chartTitle: 'Факт по месяцам, 2026 (демо)', months: MONTH_ABBR.slice(0, 8) },
-    { name: 'Factum Auto Dealer', desc: 'Продажа авто в наличии', demo: true, span2: false, color: 'var(--series-4)',
-      metrics: [{ label: 'Продано авто', fact: 12, plan: 15, series: [10,11,13,12,14,13,14,12], color: 'var(--series-4)' }],
-      chartTitle: 'Факт по месяцам, 2026 (демо)', months: MONTH_ABBR.slice(0, 8) },
   ];
 }
 
