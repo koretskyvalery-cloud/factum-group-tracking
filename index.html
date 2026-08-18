@@ -125,10 +125,12 @@
     border: 1px solid var(--border);
     border-radius: 14px;
     padding: 16px 18px 12px;
+    display: flex; flex-direction: column;
   }
 
   .card-head { display: flex; align-items: center; gap: 8px; }
   .dot { width: 9px; height: 9px; border-radius: 50%; flex: none; }
+  .proj-ico { width: 18px; height: 18px; border-radius: 4px; flex: none; display: block; }
   .proj-name { font-size: 15px; font-weight: 650; }
   .proj-desc { font-size: 12px; color: var(--text-muted); margin: 1px 0 12px; }
 
@@ -161,8 +163,10 @@
     border-radius: 4px;
     min-width: 2px;
   }
-  .plan-pct { font-size: 13px; font-weight: 650; min-width: 44px; text-align: right; }
-  .plan-note { font-size: 12px; color: var(--text-muted); margin-top: 5px; }
+  .plan-pct { font-size: 13px; font-weight: 700; min-width: 44px; text-align: right; }
+  .plan-status { display: flex; align-items: center; justify-content: space-between; gap: 4px 8px; margin-top: 7px; flex-wrap: wrap; }
+  .status-badge { font-size: 11px; font-weight: 650; padding: 2px 9px; border-radius: 999px; white-space: nowrap; }
+  .plan-target { font-size: 12px; color: var(--text-muted); white-space: nowrap; }
   .meter-mark {
     position: absolute; top: -3px; bottom: -3px; width: 2px;
     background: var(--text-primary); opacity: 0.55; border-radius: 1px;
@@ -170,8 +174,9 @@
 
   .no-plan { font-size: 12px; color: var(--text-muted); margin-top: 9px; }
 
-  /* График (свёрнут по умолчанию, раскрывается стрелочкой) */
-  .chart-block { border-top: 1px solid var(--grid); margin-top: 4px; }
+  /* График (свёрнут по умолчанию, раскрывается стрелочкой); прижат к низу карточки,
+     чтобы строка «Динамика» была на одной высоте во всех карточках */
+  .chart-block { border-top: 1px solid var(--grid); margin-top: auto; }
   .chart-toggle {
     width: 100%;
     display: flex; align-items: center; justify-content: space-between;
@@ -229,7 +234,7 @@
       <div class="mp-row">
         <span class="mp-pct" id="mp-pct">—</span>
         <div class="meter" style="flex:1; background: var(--grid);">
-          <span class="meter-fill" id="mp-fill" style="background: var(--text-muted); width: 0%;"></span>
+          <span class="meter-fill" id="mp-fill" style="background: var(--series-1); width: 0%;"></span>
         </div>
       </div>
       <div class="mp-days" id="mp-days"></div>
@@ -243,7 +248,7 @@
 // ---------- данные (снимок из Google-таблицы «Менеджеры отчет», 4 августа 2026) ----------
 const MONTHS = ['Янв','Фев','Мар','Апр','Май','Июн','Июл','Авг'];
 
-const PROJECTS = [{"name": "Factum Auto", "desc": "Импорт авто под заказ", "demo": false, "span2": true, "color": "var(--series-1)", "metrics": [{"label": "Депозиты (чистые)", "fact": 22, "plan": 195, "planNote": "план по чистым депозитам: 195 · всего внесено: 23", "series": [149, 161, 166, 189, 171, 194, 186, 22], "color": "var(--series-1-lt)"}, {"label": "Покупки", "fact": 9, "plan": 195, "series": [140, 144, 179, 186, 187, 166, 174, 9], "color": "var(--series-1)"}], "chartTitle": "Факт по месяцам, 2026 (текущий месяц — идёт)", "months": ["Янв", "Фев", "Мар", "Апр", "Май", "Июн", "Июл", "Авг"]}, {"name": "Operator-EX", "desc": "Экспорт и продажи дилерам", "demo": false, "span2": false, "color": "var(--series-2)", "metrics": [{"label": "Куплено авто дилерами", "fact": 4, "plan": null, "series": [42, 17, 4], "color": "var(--series-2)"}], "chartTitle": "Факт по месяцам (аналитика ведётся с июня; текущий — идёт)", "months": ["Июн", "Июл", "Авг"]}];
+const PROJECTS = [{"name": "Factum Auto", "desc": "Импорт авто под заказ", "demo": false, "span2": true, "color": "var(--series-1)", "metrics": [{"label": "Депозиты (чистые)", "fact": 22, "plan": 195, "series": [149, 161, 166, 189, 171, 194, 186, 22], "color": "var(--series-1-lt)"}, {"label": "Покупки", "fact": 9, "plan": 195, "series": [140, 144, 179, 186, 187, 166, 174, 9], "color": "var(--series-1)"}], "chartTitle": "Факт по месяцам, 2026 (текущий месяц — идёт)", "months": ["Янв", "Фев", "Мар", "Апр", "Май", "Июн", "Июл", "Авг"]}, {"name": "Operator-EX", "desc": "Логистика для дилеров", "demo": false, "span2": false, "color": "var(--series-2)", "metrics": [{"label": "Куплено авто дилерами", "fact": 4, "plan": null, "series": [42, 17, 4], "color": "var(--series-2)"}], "chartTitle": "Факт по месяцам (аналитика ведётся с июня; текущий — идёт)", "months": ["Июн", "Июл", "Авг"]}];
 
 // ---------- прогресс месяца по рабочим дням, пн–пт (считается на дату открытия) ----------
 window.MONTH_PCT = 0;
@@ -261,6 +266,7 @@ window.MONTH_PCT = 0;
   }
   const pct = total ? Math.round(elapsed / total * 100) : 0;
   window.MONTH_PCT = pct;
+  window.MONTH_WD = total; // рабочих дней в текущем месяце — для дневной нормы
   const todayIsWorkday = now.getDay() >= 1 && now.getDay() <= 5;
   document.getElementById('mp-pct').textContent = pct + '%';
   document.getElementById('mp-fill').style.width = pct + '%';
@@ -304,15 +310,17 @@ function renderChart(p) {
       const v = series[s].series[g];
       if (v == null) continue;
       const x = start + s * (barW + 2);
+      const tip = `<title>${esc(series[s].tips ? series[s].tips[g] : (series[s].label || '') + ' · ' + p.months[g] + ': ' + v)}</title>`;
+      const fs = dense ? 8.5 : 11;
       if (v >= 0) {
         const h = Math.max(v === 0 ? 1 : 2, v * scale);
         const y = baseY - h;
-        out += `<path d="${barPath(x, y, barW, h, 4)}" fill="${series[s].color}"/>`;
-        if (!dense) out += `<text x="${x + barW / 2}" y="${y - 5}" text-anchor="middle" font-size="11" fill="var(--text-secondary)">${v}</text>`;
+        out += `<path d="${barPath(x, y, barW, h, 4)}" fill="${series[s].color}">${tip}</path>`;
+        if (!dense || v !== 0) out += `<text x="${x + barW / 2}" y="${y - (dense ? 3 : 5)}" text-anchor="middle" font-size="${fs}" fill="var(--text-secondary)">${v}</text>`;
       } else {
         const h = Math.max(2, -v * scale);
-        out += `<rect x="${x}" y="${baseY}" width="${barW}" height="${h}" fill="${series[s].color}" opacity="0.85"/>`;
-        if (!dense) out += `<text x="${x + barW / 2}" y="${baseY + h + 12}" text-anchor="middle" font-size="11" fill="var(--text-secondary)">${v}</text>`;
+        out += `<rect x="${x}" y="${baseY}" width="${barW}" height="${h}" fill="${series[s].color}" opacity="0.85">${tip}</rect>`;
+        out += `<text x="${x + barW / 2}" y="${baseY + h + (dense ? 9 : 12)}" text-anchor="middle" font-size="${fs}" fill="var(--text-secondary)">${v}</text>`;
       }
     }
     // подпись группы; текущая (последняя) — жирнее; в плотном режиме — прореженные
@@ -328,22 +336,27 @@ function renderMetric(m, projColor) {
   if (m.plan != null) {
     const factForPlan = (m.planFact != null) ? m.planFact : m.fact;
     const pct = Math.round(factForPlan / m.plan * 100);
-    const note = m.planNote || `план на текущий месяц: ${m.plan}`;
-    // цвет — по опережению/отставанию от темпа месяца (риска на шкале)
+    // статус — по опережению/отставанию от темпа месяца (риска на шкале)
     const mp = window.MONTH_PCT || 0;
     const ratio = mp > 0 ? pct / mp : 1;
+    const diff = pct - mp;
     const sColor = ratio >= 0.9 ? 'var(--status-good)' : (ratio >= 0.6 ? 'var(--status-warn)' : 'var(--status-bad)');
-    const sWord = ratio >= 0.9 ? 'в темпе' : (ratio >= 0.6 ? 'лёгкое отставание' : 'отставание');
+    const sWord = ratio >= 1.02 ? 'опережаем' : (ratio >= 0.9 ? 'в темпе' : (ratio >= 0.6 ? 'отстаём' : 'сильно отстаём'));
+    const diffTxt = diff === 0 ? '' : ' · ' + (diff > 0 ? '+' : '−') + Math.abs(diff) + ' п.п.';
     planHtml = `
       <div class="plan-row">
-        <div class="meter" title="Риска — темп месяца по рабочим дням (${mp}%). Статус: ${sWord}"
+        <div class="meter" title="Риска — темп месяца по рабочим дням (${mp}%)"
              style="background: color-mix(in srgb, ${sColor} 16%, var(--surface-1));">
           <span class="meter-fill" style="background: ${sColor}; width: ${Math.min(100, pct)}%;"></span>
           ${mp > 0 ? `<span class="meter-mark" style="left: ${Math.min(99, mp)}%"></span>` : ''}
         </div>
-        <span class="plan-pct">${pct}%</span>
+        <span class="plan-pct" style="color: ${sColor}">${pct}%</span>
       </div>
-      <div class="plan-note">${esc(note)} · темп месяца: ${mp}%</div>`;
+      <div class="plan-status">
+        <span class="status-badge" title="Отклонение от темпа месяца (${mp}%)"
+              style="background: color-mix(in srgb, ${sColor} 13%, var(--surface-1)); color: ${sColor};">${sWord}${diffTxt}</span>
+        <span class="plan-target">план: ${m.plan}</span>
+      </div>`;
   } else {
     planHtml = `<div class="no-plan">план в таблице не задан</div>`;
   }
@@ -354,6 +367,12 @@ function renderMetric(m, projColor) {
       ${planHtml}
     </div>`;
 }
+
+// иконки проектов (Factum Auto — свой favicon; Operator-EX — фавиконка их сайта)
+const PROJ_ICONS = {
+  'Factum Auto': 'favicon.svg',
+  'Operator-EX': 'https://www.google.com/s2/favicons?domain=operator-ex.com&sz=64',
+};
 
 const openCharts = new Set(); // какие карточки развёрнуты — переживает live-перерисовку
 const chartTab = {};          // выбранная вкладка графика по имени проекта
@@ -445,20 +464,44 @@ function renderCard(p) {
       `<div class="legend-item"><span class="swatch" style="background:${m.color}"></span>${esc(m.label)}</div>`).join('')}</div>`;
   } else if (mode === 'days' || mode === 'weeks') {
     const deltas = histDeltas();
+    // дневная норма — план месяца, разложенный по рабочим дням
+    const plans = {
+      net: (p.metrics.find(x => /^Депозиты/.test(x.label)) || {}).plan,
+      buy: (p.metrics.find(x => x.label === 'Покупки') || {}).plan,
+    };
+    const nowD = new Date();
+    const curKey = nowD.getFullYear() + '-' + String(nowD.getMonth() + 1).padStart(2, '0');
+    const wd = window.MONTH_WD || 0;
+    const tipFor = (key, name) => r => {
+      const v = r[key];
+      if (v == null) return name + ' · ' + dayLabel(r.d) + ': нет данных';
+      const dt = new Date(r.d + 'T12:00:00');
+      let s = name + ' · ' + dayLabel(r.d) + ': ' + (v >= 0 ? '+' : '') + v;
+      if (dt.getDay() === 0 || dt.getDay() === 6) s += ' (выходной)';
+      else if (plans[key] && wd && r.d.slice(0, 7) === curKey)
+        s += ' · ' + Math.round(v / (plans[key] / wd) * 100) + '% дневной нормы (≈' + (plans[key] / wd).toFixed(1) + '/день)';
+      return s;
+    };
     let hMetrics, labels;
     if (mode === 'days') {
       const last = deltas.slice(-21); // последние ~3 недели
       hMetrics = [
-        { label: 'Депозиты (чистые)', series: last.map(r => r.net), color: 'var(--series-1-lt)' },
-        { label: 'Покупки', series: last.map(r => r.buy), color: 'var(--series-1)' },
+        { label: 'Депозиты (чистые)', series: last.map(r => r.net), color: 'var(--series-1-lt)',
+          tips: last.map(tipFor('net', 'Депозиты (чистые)')) },
+        { label: 'Покупки', series: last.map(r => r.buy), color: 'var(--series-1)',
+          tips: last.map(tipFor('buy', 'Покупки')) },
       ];
       labels = last.map(r => dayLabel(r.d));
-      chartTitle = 'Прирост за день · чистые депозиты и покупки';
+      chartTitle = 'Прирост за день · наведите на столбик — детали и % дневной нормы';
     } else {
       const wks = weekAgg(deltas);
+      const wTip = (key, name) => r =>
+        name + ' · ' + r.label + ': ' + (r[key] == null ? 'нет данных' : (r[key] >= 0 ? '+' : '') + r[key] + ' за неделю');
       hMetrics = [
-        { label: 'Депозиты (чистые)', series: wks.map(r => r.net), color: 'var(--series-1-lt)' },
-        { label: 'Покупки', series: wks.map(r => r.buy), color: 'var(--series-1)' },
+        { label: 'Депозиты (чистые)', series: wks.map(r => r.net), color: 'var(--series-1-lt)',
+          tips: wks.map(wTip('net', 'Депозиты (чистые)')) },
+        { label: 'Покупки', series: wks.map(r => r.buy), color: 'var(--series-1)',
+          tips: wks.map(wTip('buy', 'Покупки')) },
       ];
       labels = wks.map(r => r.label);
       chartTitle = 'Прирост за неделю (пн–вс) · последняя — идёт';
@@ -476,10 +519,12 @@ function renderCard(p) {
           <button class="chart-tab${mode === 'weeks' ? ' active' : ''}" type="button" data-mode="weeks">По неделям</button>
           <button class="chart-tab${mode === 'quarters' ? ' active' : ''}" type="button" data-mode="quarters">Хронология продаж</button>
         </div>` : '';
+  const ico = PROJ_ICONS[p.name];
   return `
     <section class="card">
       <div class="card-head">
-        <span class="dot" style="background:${p.color}"></span>
+        ${ico ? `<img class="proj-ico" src="${ico}" alt="" onerror="this.outerHTML='<span class=dot style=background:${p.color}></span>'">`
+              : `<span class="dot" style="background:${p.color}"></span>`}
         <span class="proj-name">${esc(p.name)}</span>
         ${p.demo ? '<span class="demo-badge">демо-данные</span>' : ''}
         ${hasAlt ? '<a class="detail-link" href="factum-auto.html">Детальная аналитика →</a>' : ''}
@@ -589,13 +634,11 @@ function buildProjects(monthly, b2b, now) {
   return [
     { name: 'Factum Auto', desc: 'Импорт авто под заказ', demo: false, span2: true, color: 'var(--series-1)',
       metrics: [
-        { label: 'Депозиты (чистые)', fact: netFact, plan: netPlan,
-          planNote: netPlan ? ('план по чистым депозитам: ' + netPlan + ' · всего внесено: ' + depFact) : null,
-          series: s('net'), color: 'var(--series-1-lt)' },
+        { label: 'Депозиты (чистые)', fact: netFact, plan: netPlan, series: s('net'), color: 'var(--series-1-lt)' },
         { label: 'Покупки', fact: buyFact, plan: buyPlan, series: s('buy'), color: 'var(--series-1)' },
       ],
       chartTitle: 'Факт по месяцам, 2026 (текущий месяц — идёт)', months: months },
-    { name: 'Operator-EX', desc: 'Экспорт и продажи дилерам', demo: false, span2: false, color: 'var(--series-2)',
+    { name: 'Operator-EX', desc: 'Логистика для дилеров', demo: false, span2: false, color: 'var(--series-2)',
       metrics: [
         { label: 'Куплено авто дилерами', fact: b2b[cm] || 0, plan: null, series: bMonths.map(m => b2b[m]), color: 'var(--series-2)' },
       ],

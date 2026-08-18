@@ -116,7 +116,6 @@ def main():
             "color": "var(--series-1)",
             "metrics": [
                 {"label": "Депозиты (чистые)", "fact": dep_net_fact, "plan": dep_net_plan,
-                 "planNote": f"план по чистым депозитам: {dep_net_plan} · всего внесено: {dep_fact}" if dep_net_plan else None,
                  "series": series("Депозиты чистые"), "color": "var(--series-1-lt)"},
                 {"label": "Покупки", "fact": buy_fact, "plan": buy_plan,
                  "series": series("Покупки"), "color": "var(--series-1)"},
@@ -125,7 +124,7 @@ def main():
             "months": months,
         },
         {
-            "name": "Operator-EX", "desc": "Экспорт и продажи дилерам", "demo": False, "span2": False,
+            "name": "Operator-EX", "desc": "Логистика для дилеров", "demo": False, "span2": False,
             "color": "var(--series-2)",
             "metrics": [
                 {"label": "Куплено авто дилерами", "fact": b2b_fact, "plan": None,
