@@ -222,7 +222,7 @@
     <div>
       <div class="kicker">Factum Group</div>
       <h1>Factum Group Tracking</h1>
-      <div class="sub" id="sub">Август 2026 · главные метрики месяца по проектам · данные на 18.08.2026 17:08 (Киев)</div>
+      <div class="sub" id="sub">Август 2026 · главные метрики месяца по проектам · данные на 17.08.2026 21:43 (Киев)</div>
     </div>
     <div class="month-progress">
       <div class="mp-label">Прогресс месяца (рабочие дни)</div>
@@ -243,7 +243,7 @@
 // ---------- данные (снимок из Google-таблицы «Менеджеры отчет», 4 августа 2026) ----------
 const MONTHS = ['Янв','Фев','Мар','Апр','Май','Июн','Июл','Авг'];
 
-const PROJECTS = [{"name": "Factum Auto", "desc": "Импорт авто под заказ", "demo": false, "span2": true, "color": "var(--series-1)", "metrics": [{"label": "Депозиты (чистые)", "fact": 83, "plan": 195, "planNote": "план по чистым депозитам: 195 · всего внесено: 102", "series": [149, 161, 166, 189, 171, 194, 186, 83], "color": "var(--series-1-lt)"}, {"label": "Покупки", "fact": 75, "plan": 195, "series": [140, 144, 179, 186, 187, 166, 176, 75], "color": "var(--series-1)"}], "chartTitle": "Факт по месяцам, 2026 (текущий месяц — идёт)", "months": ["Янв", "Фев", "Мар", "Апр", "Май", "Июн", "Июл", "Авг"]}, {"name": "Operator-EX", "desc": "Экспорт и продажи дилерам", "demo": false, "span2": false, "color": "var(--series-2)", "metrics": [{"label": "Куплено авто дилерами", "fact": 9, "plan": null, "series": [42, 17, 9], "color": "var(--series-2)"}], "chartTitle": "Факт по месяцам (аналитика ведётся с июня; текущий — идёт)", "months": ["Июн", "Июл", "Авг"]}];
+const PROJECTS = [{"name": "Factum Auto", "desc": "Импорт авто под заказ", "demo": false, "span2": true, "color": "var(--series-1)", "metrics": [{"label": "Депозиты (чистые)", "fact": 22, "plan": 195, "planNote": "план по чистым депозитам: 195 · всего внесено: 23", "series": [149, 161, 166, 189, 171, 194, 186, 22], "color": "var(--series-1-lt)"}, {"label": "Покупки", "fact": 9, "plan": 195, "series": [140, 144, 179, 186, 187, 166, 174, 9], "color": "var(--series-1)"}], "chartTitle": "Факт по месяцам, 2026 (текущий месяц — идёт)", "months": ["Янв", "Фев", "Мар", "Апр", "Май", "Июн", "Июл", "Авг"]}, {"name": "Operator-EX", "desc": "Экспорт и продажи дилерам", "demo": false, "span2": false, "color": "var(--series-2)", "metrics": [{"label": "Куплено авто дилерами", "fact": 4, "plan": null, "series": [42, 17, 4], "color": "var(--series-2)"}], "chartTitle": "Факт по месяцам (аналитика ведётся с июня; текущий — идёт)", "months": ["Июн", "Июл", "Авг"]}];
 
 // ---------- прогресс месяца по рабочим дням, пн–пт (считается на дату открытия) ----------
 window.MONTH_PCT = 0;
@@ -281,13 +281,18 @@ function barPath(x, y, w, h, r) {
 function renderChart(p) {
   const W = 440, H = 150, padT = 20, padB = 18, padX = 6;
   const plotH = H - padT - padB;
-  const baseY = padT + plotH;
   const nGroups = p.months.length;
   const series = p.metrics.filter(m => m.series);
   const nSer = series.length;
-  const maxV = Math.max(...series.flatMap(m => m.series));
+  const vals = series.flatMap(m => m.series).filter(v => typeof v === 'number');
+  const maxV = Math.max(0, ...vals);
+  const minV = Math.min(0, ...vals);
+  const scale = plotH / ((maxV - minV) || 1);
+  const baseY = padT + maxV * scale;   // база опускается, если есть отрицательные значения
+  const dense = nGroups > 9;           // плотный режим (напр. по дням): без цифр над столбиками
   const groupW = (W - padX * 2) / nGroups;
-  const barW = Math.min(24, (groupW - 14 - (nSer - 1) * 2) / nSer);
+  const barW = Math.min(24, Math.max(3, (groupW - (dense ? 4 : 14) - (nSer - 1) * 2) / nSer));
+  const lblEvery = Math.max(1, Math.ceil(nGroups / 8));
   let out = '';
   // базовая линия
   out += `<line x1="0" y1="${baseY}" x2="${W}" y2="${baseY}" stroke="var(--baseline)" stroke-width="1"/>`;
@@ -298,15 +303,22 @@ function renderChart(p) {
     for (let s = 0; s < nSer; s++) {
       const v = series[s].series[g];
       if (v == null) continue;
-      const h = Math.max(2, v / maxV * plotH);
       const x = start + s * (barW + 2);
-      const y = baseY - h;
-      out += `<path d="${barPath(x, y, barW, h, 4)}" fill="${series[s].color}"/>`;
-      out += `<text x="${x + barW / 2}" y="${y - 5}" text-anchor="middle" font-size="11" fill="var(--text-secondary)">${v}</text>`;
+      if (v >= 0) {
+        const h = Math.max(v === 0 ? 1 : 2, v * scale);
+        const y = baseY - h;
+        out += `<path d="${barPath(x, y, barW, h, 4)}" fill="${series[s].color}"/>`;
+        if (!dense) out += `<text x="${x + barW / 2}" y="${y - 5}" text-anchor="middle" font-size="11" fill="var(--text-secondary)">${v}</text>`;
+      } else {
+        const h = Math.max(2, -v * scale);
+        out += `<rect x="${x}" y="${baseY}" width="${barW}" height="${h}" fill="${series[s].color}" opacity="0.85"/>`;
+        if (!dense) out += `<text x="${x + barW / 2}" y="${baseY + h + 12}" text-anchor="middle" font-size="11" fill="var(--text-secondary)">${v}</text>`;
+      }
     }
-    // подпись месяца; текущий (последний) — жирнее
+    // подпись группы; текущая (последняя) — жирнее; в плотном режиме — прореженные
     const isLast = g === nGroups - 1;
-    out += `<text x="${gx + groupW / 2}" y="${baseY + 15}" text-anchor="middle" font-size="11" ${isLast ? 'font-weight="650"' : ''} fill="var(--text-muted)">${p.months[g]}</text>`;
+    if (g % lblEvery === 0 || isLast)
+      out += `<text x="${gx + groupW / 2}" y="${H - 3}" text-anchor="middle" font-size="${dense ? 9.5 : 11}" ${isLast ? 'font-weight="650"' : ''} fill="var(--text-muted)">${p.months[g]}</text>`;
   }
   return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(p.chartTitle)}">${out}</svg>`;
 }
@@ -355,6 +367,41 @@ let SALES_QUARTERS = {
   note: '* К3 2026 не завершён — среднее по закрытым месяцам',
 };
 
+// хронология по дням: счётчики месяца на конец дня (Лист4 прослойки); фолбэк-снимок,
+// при загрузке живых данных заменяется
+let HIST = [
+  ['2026-08-04',22,null,8],['2026-08-05',28,22,12],['2026-08-06',31,25,15],['2026-08-07',40,33,22],
+  ['2026-08-08',41,34,22],['2026-08-09',41,34,22],['2026-08-10',51,40,27],['2026-08-11',60,49,40],
+  ['2026-08-12',66,54,47],['2026-08-13',74,60,52],['2026-08-14',83,67,63],['2026-08-15',83,67,63],
+  ['2026-08-16',83,67,64],['2026-08-17',92,75,68],['2026-08-18',102,83,75],
+];
+
+function histDeltas() { // суточный прирост: разница счётчиков; на стыке месяцев — значение нового месяца
+  const out = [];
+  for (let i = 1; i < HIST.length; i++) {
+    const a = HIST[i - 1], b = HIST[i];
+    const sm = String(a[0]).slice(0, 7) === String(b[0]).slice(0, 7);
+    const dd = (x, y) => (y == null) ? null : (sm ? (x == null ? null : y - x) : y);
+    out.push({ d: b[0], net: dd(a[2], b[2]), buy: dd(a[3], b[3]) });
+  }
+  return out;
+}
+function dayLabel(d) { return d.slice(8, 10) + '.' + d.slice(5, 7); }
+function weekAgg(deltas) { // суммы приростов по неделям пн–вс
+  const wk = {};
+  deltas.forEach(r => {
+    const dt = new Date(r.d + 'T12:00:00');
+    dt.setDate(dt.getDate() - (dt.getDay() + 6) % 7);
+    const key = dt.toISOString().slice(0, 10);
+    if (!wk[key]) wk[key] = { net: null, buy: null };
+    ['net', 'buy'].forEach(k => { if (r[k] != null) wk[key][k] = (wk[key][k] || 0) + r[k]; });
+  });
+  return Object.keys(wk).sort().map(k => {
+    const end = new Date(k + 'T12:00:00'); end.setDate(end.getDate() + 6);
+    return { label: dayLabel(k) + '–' + dayLabel(end.toISOString().slice(0, 10)), net: wk[k].net, buy: wk[k].buy };
+  });
+}
+
 function quarterTable(rows, now) {
   const per = {};
   rows.forEach(r => { const y = Number(r[0]); if (y) per[y] = r.slice(1, 13); });
@@ -396,12 +443,37 @@ function renderCard(p) {
     chartTitle = 'Среднее купленных авто за месяц' + (SALES_QUARTERS.note ? ' · ' + SALES_QUARTERS.note : '');
     legendHtml = `<div class="legend">${qMetrics.map(m =>
       `<div class="legend-item"><span class="swatch" style="background:${m.color}"></span>${esc(m.label)}</div>`).join('')}</div>`;
+  } else if (mode === 'days' || mode === 'weeks') {
+    const deltas = histDeltas();
+    let hMetrics, labels;
+    if (mode === 'days') {
+      const last = deltas.slice(-21); // последние ~3 недели
+      hMetrics = [
+        { label: 'Депозиты (чистые)', series: last.map(r => r.net), color: 'var(--series-1-lt)' },
+        { label: 'Покупки', series: last.map(r => r.buy), color: 'var(--series-1)' },
+      ];
+      labels = last.map(r => dayLabel(r.d));
+      chartTitle = 'Прирост за день · чистые депозиты и покупки';
+    } else {
+      const wks = weekAgg(deltas);
+      hMetrics = [
+        { label: 'Депозиты (чистые)', series: wks.map(r => r.net), color: 'var(--series-1-lt)' },
+        { label: 'Покупки', series: wks.map(r => r.buy), color: 'var(--series-1)' },
+      ];
+      labels = wks.map(r => r.label);
+      chartTitle = 'Прирост за неделю (пн–вс) · последняя — идёт';
+    }
+    chartHtml = renderChart({ metrics: hMetrics, months: labels, chartTitle });
+    legendHtml = `<div class="legend">${hMetrics.map(m =>
+      `<div class="legend-item"><span class="swatch" style="background:${m.color}"></span>${esc(m.label)}</div>`).join('')}</div>`;
   } else {
     chartHtml = renderChart(p);
   }
   const tabs = hasAlt ? `
         <div class="chart-tabs">
           <button class="chart-tab${mode === 'months' ? ' active' : ''}" type="button" data-mode="months">По месяцам</button>
+          <button class="chart-tab${mode === 'days' ? ' active' : ''}" type="button" data-mode="days">По дням</button>
+          <button class="chart-tab${mode === 'weeks' ? ' active' : ''}" type="button" data-mode="weeks">По неделям</button>
           <button class="chart-tab${mode === 'quarters' ? ' active' : ''}" type="button" data-mode="quarters">Хронология продаж</button>
         </div>` : '';
   return `
@@ -534,6 +606,18 @@ function buildProjects(monthly, b2b, now) {
 const gvResults = {};
 window.__gvM = t => { gvResults.m = t; gvTryRender(); };
 window.__gvB = t => { gvResults.b = t; gvTryRender(); };
+window.__gvH = t => {
+  try {
+    const rows = gvRows(t).map(r => {
+      let d = r[0];
+      if (d instanceof Date) d = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+      else d = String(d).trim();
+      return [d, num(r[1]), num(r[2]), num(r[3])];
+    }).filter(r => /^\d{4}-\d{2}-\d{2}$/.test(r[0]));
+    if (rows.length) { rows.sort((a, b) => a[0] < b[0] ? -1 : 1); HIST = rows; }
+  } catch (e) { console.log('hist error:', e); }
+  if (currentProjects) renderAll(currentProjects);
+};
 window.__gvS = t => {
   try {
     const q = quarterTable(gvRows(t), new Date());
@@ -562,6 +646,7 @@ function gvLoad(sheet, handler, range) {
 gvLoad('Лист1', '__gvM');
 gvLoad('Лист2', '__gvB');
 gvLoad('Лист3', '__gvS', 'A1:M10');
+gvLoad('Лист4', '__gvH', 'A1:D400');
 </script>
 </body>
 </html>
