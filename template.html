@@ -678,7 +678,12 @@ function gvTryRender() {
   if (!gvResults.m || !gvResults.b) return;
   try {
     const now = new Date();
-    renderAll(buildProjects(parseMonthly(gvRows(gvResults.m)), parseB2B(gvRows(gvResults.b)), now));
+    const monthly = parseMonthly(gvRows(gvResults.m));
+    const cm = now.getMonth() + 1;
+    // во время 5-минутного обновления IMPORTRANGE лист бывает пуст пару секунд — не рисуем нули
+    if (monthly['fact|' + cm + '|dep'] == null && monthly['fact|' + cm + '|buy'] == null &&
+        monthly['fact|' + cm + '|net'] == null) return;
+    renderAll(buildProjects(monthly, parseB2B(gvRows(gvResults.b)), now));
     const t = String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0');
     document.getElementById('sub').textContent =
       MONTH_FULL[now.getMonth()] + ' ' + now.getFullYear() +
