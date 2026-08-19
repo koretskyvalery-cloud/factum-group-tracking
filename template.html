@@ -653,8 +653,14 @@ window.__gvH = t => {
   try {
     const rows = gvRows(t).map(r => {
       let d = r[0];
-      if (d instanceof Date) d = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
-      else d = String(d).trim();
+      if (d instanceof Date) {
+        d = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+      } else {
+        d = String(d).trim();
+        // gviz-JSONP отдаёт даты строками вида "Date(2026,7,19)" (месяц с нуля)
+        const dm = d.match(/^Date\((\d+),(\d+),(\d+)/);
+        if (dm) d = dm[1] + '-' + String(+dm[2] + 1).padStart(2, '0') + '-' + String(+dm[3]).padStart(2, '0');
+      }
       return [d, num(r[1]), num(r[2]), num(r[3])];
     }).filter(r => /^\d{4}-\d{2}-\d{2}$/.test(r[0]));
     if (rows.length) { rows.sort((a, b) => a[0] < b[0] ? -1 : 1); HIST = rows; }
