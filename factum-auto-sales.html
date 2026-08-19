@@ -84,8 +84,35 @@
   </section>
 
   <section class="card">
-    <div class="chart-title">Депозиты (чистые) и покупки по месяцам, 2026 (текущий — идёт)</div>
+    <div class="chart-title">Депозиты (чистые) и покупки по месяцам, 2026 (текущий — идёт) · покупки — из «Общий зачет»</div>
     <div class="chart" id="sd-chart"></div>
+  </section>
+
+  <h2>Тёплые лиды · amoCRM</h2>
+  <section class="card">
+    <div class="metrics">
+      <div class="metric">
+        <div class="metric-label">Тёплых сейчас</div>
+        <div class="metric-value" id="wm-now">—</div>
+        <div class="metric-note">6 воронок (Украина, Молдова, Poland, Казахстан, Грузия, Армения) · этапы «готов в ближ. месяц» → «выслан договор»</div>
+      </div>
+      <div class="metric">
+        <div class="metric-label">Новых тёплых за месяц</div>
+        <div class="metric-value" id="wm-new">—</div>
+      </div>
+      <div class="metric">
+        <div class="metric-label">Из тёплых → депозит</div>
+        <div class="metric-value" id="wm-dep">—</div>
+        <div class="metric-note" id="wm-dep-pct"></div>
+      </div>
+      <div class="metric">
+        <div class="metric-label">Из тёплых → закрыто</div>
+        <div class="metric-value" id="wm-cl">—</div>
+        <div class="metric-note" id="wm-cl-pct"></div>
+      </div>
+    </div>
+    <div class="chart-title">По дням: новые тёплые, переходы в депозит и в закрыто (история копится с 20.08.2026)</div>
+    <div class="chart" id="wm-chart"></div>
   </section>
 
   <h2>Аналитика продаж в ретроспективе</h2>
@@ -241,24 +268,78 @@ window.__gvS = t => {
   catch (e) { console.log(e); }
 };
 
+function renderSalesMain() {
+  const F = window.LF;
+  if (!F) return;
+  const cm = new Date().getMonth() + 1;
+  // покупки — из «Общий зачет» (Лист3), там они отражаются вовремя
+  const sp = (window.SPER || {})[new Date().getFullYear()];
+  const buyVals = sp ? sp.slice(0, cm).map(v => (typeof v === 'number' ? v : null)) : series(F.buy, cm);
+  const buyNow = sp && typeof sp[cm - 1] === 'number' ? sp[cm - 1] : F.buy[cm];
+  if (F.net[cm] != null) document.getElementById('sd-net').textContent = F.net[cm];
+  if (buyNow != null) document.getElementById('sd-buy').textContent = buyNow;
+  if (F.mgr[cm] != null) document.getElementById('sd-mgr').textContent = F.mgr[cm];
+  const months = MONTH_ABBR.slice(0, cm);
+  document.getElementById('sd-chart').innerHTML = groupedColumns(months, [
+    { label: 'Депозиты (чистые)', vals: series(F.net, cm), color: 'var(--series-1-lt)' },
+    { label: 'Покупки', vals: buyVals, color: 'var(--series-1)' },
+  ]);
+  stampSub('Депозиты и покупки автомобилей');
+}
 window.__gvM = t => {
+  try { window.LF = parseFacts(gvRows(t)); renderSalesMain(); } catch (e) { console.log(e); }
+};
+window.__gvW = t => {
   try {
-    const F = parseFacts(gvRows(t));
-    const cm = new Date().getMonth() + 1;
-    if (F.net[cm] != null) document.getElementById('sd-net').textContent = F.net[cm];
-    if (F.buy[cm] != null) document.getElementById('sd-buy').textContent = F.buy[cm];
-    if (F.mgr[cm] != null) document.getElementById('sd-mgr').textContent = F.mgr[cm];
-    const months = MONTH_ABBR.slice(0, cm);
-    document.getElementById('sd-chart').innerHTML = groupedColumns(months, [
-      { label: 'Депозиты (чистые)', vals: series(F.net, cm), color: 'var(--series-1-lt)' },
-      { label: 'Покупки', vals: series(F.buy, cm), color: 'var(--series-1)' },
+    const rows = gvRows(t).map(r => {
+      let d = r[0];
+      if (d instanceof Date) {
+        d = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+      } else {
+        d = String(d).trim();
+        const dm = d.match(/^Date\((\d+),(\d+),(\d+)/);
+        if (dm) d = dm[1] + '-' + String(+dm[2] + 1).padStart(2, '0') + '-' + String(+dm[3]).padStart(2, '0');
+      }
+      return [d, num(r[1]), num(r[2]), num(r[3]), num(r[4])];
+    }).filter(r => /^\d{4}-\d{2}-\d{2}$/.test(r[0]));
+    if (!rows.length) return;
+    rows.sort((a, b) => a[0] < b[0] ? -1 : 1);
+    const last = rows[rows.length - 1];
+    const ym = String(last[0]).slice(0, 7);
+    let neu = 0, dep = 0, cl = 0;
+    rows.forEach(r => { if (String(r[0]).slice(0, 7) === ym) { neu += r[2] || 0; dep += r[3] || 0; cl += r[4] || 0; } });
+    document.getElementById('wm-now').textContent = last[1] ?? '—';
+    document.getElementById('wm-new').textContent = '+' + neu;
+    document.getElementById('wm-dep').textContent = dep;
+    document.getElementById('wm-cl').textContent = cl;
+    const out = dep + cl;
+    if (out > 0) {
+      document.getElementById('wm-dep-pct').textContent = Math.round(dep / out * 100) + '% исходов';
+      document.getElementById('wm-cl-pct').textContent = Math.round(cl / out * 100) + '% исходов';
+    }
+    const days = rows.slice(-21);
+    const dl = d => d.slice(8, 10) + '.' + d.slice(5, 7);
+    document.getElementById('wm-chart').innerHTML = groupedColumns(days.map(r => dl(String(r[0]))), [
+      { label: 'Новые тёплые', vals: days.map(r => r[2]), color: 'var(--series-3)' },
+      { label: 'В депозит', vals: days.map(r => r[3]), color: 'var(--series-1)' },
+      { label: 'В закрыто', vals: days.map(r => r[4]), color: 'var(--text-muted)' },
     ]);
-    stampSub('Депозиты и покупки автомобилей');
   } catch (e) { console.log(e); }
+};
+const _gvS0 = window.__gvS;
+window.__gvS = t => {
+  try {
+    const rows = gvRows(t);
+    const per = {};
+    rows.forEach(r => { const y = Number(r[0]); if (y) per[y] = r.slice(1, 13).map(num); });
+    if (Object.keys(per).length) { window.SPER = per; renderSalesMain(); }
+  } catch (e) { console.log(e); }
+  _gvS0(t);
 };
 drawQuarters();
 gvLoad('Лист1', '__gvM');
 gvLoad('Лист3', '__gvS', 'A1:M10');
+gvLoad('Лист5', '__gvW', 'A1:E400');
 </script>
 </body>
 </html>

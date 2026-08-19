@@ -177,6 +177,7 @@
   /* График (свёрнут по умолчанию, раскрывается стрелочкой); прижат к низу карточки,
      чтобы строка «Динамика» была на одной высоте во всех карточках */
   .chart-block { border-top: 1px solid var(--grid); margin-top: auto; }
+  .chart-block + .chart-block { margin-top: 0; }
   .chart-toggle {
     width: 100%;
     display: flex; align-items: center; justify-content: space-between;
@@ -372,7 +373,6 @@ function renderMetric(m, projColor) {
 const PROJ_ICONS = {
   'Factum Auto': 'favicon.svg',
   'Operator-EX': 'https://www.google.com/s2/favicons?domain=operator-ex.com&sz=64',
-  'Тёплые лиды': 'https://www.google.com/s2/favicons?domain=amocrm.ru&sz=64',
 };
 
 const openCharts = new Set(); // какие карточки развёрнуты — переживает live-перерисовку
@@ -398,8 +398,28 @@ let HIST = [
 
 // тёплые лиды из amoCRM (Лист5): дата | тёплых сейчас | новых за день | в депозит | в закрыто
 let WARMH = [['2026-08-20', 200, 0, 0, 0]];
+let LAST_MONTHLY = null; // последний разбор Лист1 — для секций отделов
 
-function warmCard() {
+function pctFmt(v) {
+  if (v == null || v === '') return '—';
+  if (typeof v === 'number') { if (v <= 1) v = v * 100; return String(Math.round(v * 10) / 10).replace('.', ',') + '%'; }
+  return String(v);
+}
+function legendOf(ms) {
+  return `<div class="legend">${ms.map(m =>
+    `<div class="legend-item"><span class="swatch" style="background:${m.color}"></span>${esc(m.label)}</div>`).join('')}</div>`;
+}
+function deptBlockHtml(key, title, inner) {
+  const open = openCharts.has(key);
+  return `
+      <div class="chart-block${open ? ' chart-open' : ''}" data-proj="${key}">
+        <button class="chart-toggle" type="button" aria-expanded="${open}">
+          <span>${title}</span><span class="chev">▼</span>
+        </button>
+        <div class="chart-wrap" ${open ? '' : 'hidden'}>${inner}</div>
+      </div>`;
+}
+function salesInner() {
   const rows = WARMH;
   const last = rows[rows.length - 1] || [];
   const ym = String(last[0] || '').slice(0, 7);
@@ -407,20 +427,41 @@ function warmCard() {
   rows.forEach(r => { if (String(r[0]).slice(0, 7) === ym) { neu += r[2] || 0; dep += r[3] || 0; cl += r[4] || 0; } });
   const out = dep + cl;
   const pct = out > 0 ? ' (' + Math.round(dep / out * 100) + '% / ' + Math.round(cl / out * 100) + '%)' : '';
-  const days = rows.slice(-21);
-  return {
-    name: 'Тёплые лиды', desc: 'amoCRM · 6 воронок · этапы «готов в ближ. месяц» → «выслан договор»',
-    demo: false, color: 'var(--series-3)',
-    metrics: [{ label: 'Тёплых сейчас', fact: last[1] || 0, plan: null,
-      note: 'за месяц: +' + neu + ' новых · в депозит: ' + dep + ' · в закрыто: ' + cl + pct }],
-    chartTitle: 'По дням: новые тёплые и исходы (копится с 20.08)',
-    months: days.map(r => dayLabel(String(r[0]))),
-    chartMetrics: [
+  const days = rows.slice(-14);
+  const cm = {
+    metrics: [
       { label: 'Новые тёплые', series: days.map(r => r[2]), color: 'var(--series-3)' },
       { label: 'В депозит', series: days.map(r => r[3]), color: 'var(--series-1)' },
       { label: 'В закрыто', series: days.map(r => r[4]), color: 'var(--text-muted)' },
     ],
+    months: days.map(r => dayLabel(String(r[0]))),
+    chartTitle: 'Тёплые лиды amoCRM по дням',
   };
+  return `
+          <div class="chart-head"><span class="chart-title">Тёплые в amoCRM сейчас: <b>${last[1] || 0}</b> · за месяц: +${neu} новых · в депозит: ${dep} · в закрыто: ${cl}${pct}</span>
+            <a class="detail-link" href="factum-auto-sales.html">Полная аналитика →</a></div>
+          <div class="chart-head">${legendOf(cm.metrics)}</div>
+          <div class="chart">${renderChart(cm)}</div>`;
+}
+function mkInner() {
+  const M = LAST_MONTHLY, cmN = new Date().getMonth() + 1;
+  if (!M) return '<div class="chart-title">данные загружаются…</div>';
+  const ser = [], lab = [];
+  for (let m = 1; m <= cmN; m++) { ser.push(M['fact|' + m + '|leads'] ?? null); lab.push(MONTH_ABBR[m - 1]); }
+  return `
+          <div class="chart-head"><span class="chart-title">Лиды в этом месяце: <b>${M['fact|' + cmN + '|leads'] ?? '—'}</b> · CR в депозит: ${pctFmt(M['fact|' + cmN + '|crd'])} · CR в покупку: ${pctFmt(M['fact|' + cmN + '|crb'])}</span>
+            <a class="detail-link" href="factum-auto-marketing.html">Полная аналитика →</a></div>
+          <div class="chart">${renderChart({ metrics: [{ label: 'Лиды', series: ser, color: 'var(--series-4)' }], months: lab, chartTitle: 'Лиды по месяцам' })}</div>`;
+}
+function hrInner() {
+  const M = LAST_MONTHLY, cmN = new Date().getMonth() + 1;
+  if (!M) return '<div class="chart-title">данные загружаются…</div>';
+  const ser = [], lab = [];
+  for (let m = 1; m <= cmN; m++) { ser.push(M['fact|' + m + '|mgr'] ?? null); lab.push(MONTH_ABBR[m - 1]); }
+  return `
+          <div class="chart-head"><span class="chart-title">Менеджеров с депозитами: <b>${M['fact|' + cmN + '|mgr'] ?? '—'}</b></span>
+            <a class="detail-link" href="factum-auto-hr.html">Полная аналитика →</a></div>
+          <div class="chart">${renderChart({ metrics: [{ label: 'Менеджеры с депозитами', series: ser, color: 'var(--series-3)' }], months: lab, chartTitle: 'Менеджеры с депозитами по месяцам' })}</div>`;
 }
 
 function histDeltas() { // суточный прирост: разница счётчиков; на стыке месяцев — значение нового месяца
@@ -573,6 +614,9 @@ function renderCard(p) {
           <div class="chart">${chartHtml}</div>
         </div>
       </div>
+      ${hasAlt ? deptBlockHtml('FA|sales', 'Отдел продаж', salesInner())
+               + deptBlockHtml('FA|mk', 'Маркетинг', mkInner())
+               + deptBlockHtml('FA|hr', 'HR-отдел', hrInner()) : ''}
     </section>`;
 }
 
@@ -598,7 +642,7 @@ document.getElementById('grid').addEventListener('click', e => {
 
 function renderAll(projects) {
   currentProjects = projects;
-  document.getElementById('grid').innerHTML = projects.concat([warmCard()]).map(renderCard).join('');
+  document.getElementById('grid').innerHTML = projects.map(renderCard).join('');
 }
 renderAll(PROJECTS); // сборка на момент публикации — фолбэк, если живые данные не загрузятся
 
@@ -637,6 +681,10 @@ function parseMonthly(rows) {
     if (crit.startsWith('Депозиты Факт')) out[cur + '|net'] = num(row[2]);
     else if (crit === 'Депозиты') out[cur + '|dep'] = num(row[2]);
     else if (crit === 'Покупки') out[cur + '|buy'] = num(row[2]);
+    else if (crit === 'Лиды') out[cur + '|leads'] = num(row[2]);
+    else if (crit.startsWith('Менеджеры с деп')) out[cur + '|mgr'] = num(row[2]);
+    else if (crit.startsWith('CR из лида в деп')) out[cur + '|crd'] = row[2];
+    else if (crit.startsWith('CR из лида в пок')) out[cur + '|crb'] = row[2];
   }
   return out;
 }
@@ -655,16 +703,19 @@ function buildProjects(monthly, b2b, now) {
   const months = MONTH_ABBR.slice(0, cm);
   const s = (key) => { const r = []; for (let m = 1; m <= cm; m++) r.push(monthly['fact|' + m + '|' + key]); return r; };
   const depFact = monthly['fact|' + cm + '|dep'] || 0;
-  const buyFact = monthly['fact|' + cm + '|buy'] || 0;
   const buyPlan = monthly['plan|' + cm + '|buy'] ?? null;
   const netFact = monthly['fact|' + cm + '|net'] || 0;
   const netPlan = monthly['plan|' + cm + '|net'] ?? null;
+  // покупки — из «Общий зачет» (Лист3): там они отражаются вовремя
+  const sp = (window.SPER || {})[now.getFullYear()];
+  const buyFact = (sp && sp[cm - 1] != null) ? sp[cm - 1] : (monthly['fact|' + cm + '|buy'] || 0);
+  const buySeries = sp ? sp.slice(0, cm) : s('buy');
   const bMonths = Object.keys(b2b).map(Number).sort((a, b) => a - b);
   return [
     { name: 'Factum Auto', desc: 'Импорт авто под заказ', demo: false, span2: true, color: 'var(--series-1)',
       metrics: [
         { label: 'Депозиты (чистые)', fact: netFact, plan: netPlan, series: s('net'), color: 'var(--series-1-lt)' },
-        { label: 'Покупки', fact: buyFact, plan: buyPlan, series: s('buy'), color: 'var(--series-1)' },
+        { label: 'Покупки', fact: buyFact, plan: buyPlan, series: buySeries, color: 'var(--series-1)' },
       ],
       chartTitle: 'Факт по месяцам, 2026 (текущий месяц — идёт)', months: months },
     { name: 'Operator-EX', desc: 'Логистика для дилеров', demo: false, span2: false, color: 'var(--series-2)',
@@ -715,7 +766,12 @@ window.__gvW = t => {
 };
 window.__gvS = t => {
   try {
-    const q = quarterTable(gvRows(t), new Date());
+    const rows = gvRows(t);
+    // помесячные суммы покупок из «Общий зачет» — реальный источник покупок
+    const per = {};
+    rows.forEach(r => { const y = Number(r[0]); if (y) per[y] = r.slice(1, 13).map(num); });
+    if (Object.keys(per).length) window.SPER = per;
+    const q = quarterTable(rows, new Date());
     if (Object.keys(q.years).length) SALES_QUARTERS = q;
   } catch (e) { console.log('sales history error:', e); }
   gvTryRender();
@@ -729,6 +785,7 @@ function gvTryRender() {
     // во время 5-минутного обновления IMPORTRANGE лист бывает пуст пару секунд — не рисуем нули
     if (monthly['fact|' + cm + '|dep'] == null && monthly['fact|' + cm + '|buy'] == null &&
         monthly['fact|' + cm + '|net'] == null) return;
+    LAST_MONTHLY = monthly;
     renderAll(buildProjects(monthly, parseB2B(gvRows(gvResults.b)), now));
     const t = String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0');
     document.getElementById('sub').textContent =
