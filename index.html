@@ -326,7 +326,7 @@ function renderChart(p) {
     }
     // подпись группы; текущая (последняя) — жирнее; в плотном режиме — прореженные
     const isLast = g === nGroups - 1;
-    if (isLast || (g % lblEvery === 0 && nGroups - 1 - g >= 2))
+    if (isLast || (g % lblEvery === 0 && (!dense || nGroups - 1 - g >= 2)))
       out += `<text x="${gx + groupW / 2}" y="${H - 3}" text-anchor="middle" font-size="${dense ? 9.5 : 11}" ${isLast ? 'font-weight="650"' : ''} fill="var(--text-muted)">${p.months[g]}</text>`;
   }
   return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(p.chartTitle)}">${out}</svg>`;
