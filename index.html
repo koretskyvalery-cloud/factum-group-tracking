@@ -228,7 +228,7 @@
     <div>
       <div class="kicker">Factum Group</div>
       <h1>Factum Group Tracking</h1>
-      <div class="sub" id="sub">Август 2026 · главные метрики месяца по проектам · данные на 20.08.2026 08:49 (Киев)</div>
+      <div class="sub" id="sub">Август 2026 · главные метрики месяца по проектам · данные на 17.08.2026 21:43 (Киев)</div>
     </div>
     <div class="month-progress">
       <div class="mp-label">Прогресс месяца (рабочие дни)</div>
@@ -249,7 +249,7 @@
 // ---------- данные (снимок из Google-таблицы «Менеджеры отчет», 4 августа 2026) ----------
 const MONTHS = ['Янв','Фев','Мар','Апр','Май','Июн','Июл','Авг'];
 
-const PROJECTS = [{"name": "Factum Auto", "desc": "Импорт авто под заказ", "demo": false, "span2": true, "color": "var(--series-1)", "metrics": [{"label": "Депозиты (чистые)", "fact": 94, "plan": 195, "series": [149, 161, 166, 189, 171, 194, 186, 94], "color": "var(--series-1-lt)"}, {"label": "Покупки", "fact": 85, "plan": 195, "series": [140, 144, 179, 186, 187, 166, 176, 85], "color": "var(--series-1)"}], "chartTitle": "Факт по месяцам, 2026 (текущий месяц — идёт)", "months": ["Янв", "Фев", "Мар", "Апр", "Май", "Июн", "Июл", "Авг"]}, {"name": "Operator-EX", "desc": "Логистика для дилеров", "demo": false, "span2": false, "color": "var(--series-2)", "metrics": [{"label": "Куплено авто дилерами", "fact": 11, "plan": null, "series": [42, 17, 11], "color": "var(--series-2)"}], "chartTitle": "Факт по месяцам (аналитика ведётся с июня; текущий — идёт)", "months": ["Июн", "Июл", "Авг"]}];
+const PROJECTS = [{"name": "Factum Auto", "desc": "Импорт авто под заказ", "demo": false, "span2": true, "color": "var(--series-1)", "metrics": [{"label": "Депозиты (чистые)", "fact": 22, "plan": 195, "series": [149, 161, 166, 189, 171, 194, 186, 22], "color": "var(--series-1-lt)"}, {"label": "Покупки", "fact": 9, "plan": 195, "series": [140, 144, 179, 186, 187, 166, 174, 9], "color": "var(--series-1)"}], "chartTitle": "Факт по месяцам, 2026 (текущий месяц — идёт)", "months": ["Янв", "Фев", "Мар", "Апр", "Май", "Июн", "Июл", "Авг"]}, {"name": "Operator-EX", "desc": "Логистика для дилеров", "demo": false, "span2": false, "color": "var(--series-2)", "metrics": [{"label": "Куплено авто дилерами", "fact": 4, "plan": null, "series": [42, 17, 4], "color": "var(--series-2)"}], "chartTitle": "Факт по месяцам (аналитика ведётся с июня; текущий — идёт)", "months": ["Июн", "Июл", "Авг"]}];
 
 // ---------- прогресс месяца по рабочим дням, пн–пт (считается на дату открытия) ----------
 window.MONTH_PCT = 0;
@@ -326,7 +326,7 @@ function renderChart(p) {
     }
     // подпись группы; текущая (последняя) — жирнее; в плотном режиме — прореженные
     const isLast = g === nGroups - 1;
-    if (g % lblEvery === 0 || isLast)
+    if (isLast || (g % lblEvery === 0 && nGroups - 1 - g >= 2))
       out += `<text x="${gx + groupW / 2}" y="${H - 3}" text-anchor="middle" font-size="${dense ? 9.5 : 11}" ${isLast ? 'font-weight="650"' : ''} fill="var(--text-muted)">${p.months[g]}</text>`;
   }
   return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(p.chartTitle)}">${out}</svg>`;
@@ -398,6 +398,8 @@ let HIST = [
 
 // тёплые лиды из amoCRM (Лист5): дата | тёплых сейчас | новых за день | в депозит | в закрыто
 let WARMH = [['2026-08-20', 200, 0, 0, 0]];
+// покупки по датам из «Список покупок» (Лист6): { 'yyyy-mm-dd': count }
+let BUYD = {};
 let LAST_MONTHLY = null; // последний разбор Лист1 — для секций отделов
 
 function pctFmt(v) {
@@ -534,6 +536,19 @@ function renderCard(p) {
       `<div class="legend-item"><span class="swatch" style="background:${m.color}"></span>${esc(m.label)}</div>`).join('')}</div>`;
   } else if (mode === 'days' || mode === 'weeks') {
     const deltas = histDeltas();
+    // покупки — по реальным датам из «Список покупок»; депозиты — по дневным снимкам
+    const dmap = {};
+    deltas.forEach(r => { dmap[r.d] = r; });
+    let dayRows = deltas;
+    if (Object.keys(BUYD).length) {
+      dayRows = [];
+      const nowD2 = new Date();
+      const y2 = nowD2.getFullYear(), m2 = nowD2.getMonth() + 1;
+      for (let dd = 1; dd <= nowD2.getDate(); dd++) {
+        const ds = y2 + '-' + String(m2).padStart(2, '0') + '-' + String(dd).padStart(2, '0');
+        dayRows.push({ d: ds, net: dmap[ds] ? dmap[ds].net : null, buy: BUYD[ds] || 0 });
+      }
+    }
     // дневная норма — план месяца, разложенный по рабочим дням
     const plans = {
       net: (p.metrics.find(x => /^Депозиты/.test(x.label)) || {}).plan,
@@ -554,7 +569,7 @@ function renderCard(p) {
     };
     let hMetrics, labels;
     if (mode === 'days') {
-      const last = deltas.slice(-21); // последние ~3 недели
+      const last = dayRows.slice(-21); // последние ~3 недели
       hMetrics = [
         { label: 'Депозиты (чистые)', series: last.map(r => r.net), color: 'var(--series-1-lt)',
           tips: last.map(tipFor('net', 'Депозиты (чистые)')) },
@@ -564,7 +579,7 @@ function renderCard(p) {
       labels = last.map(r => dayLabel(r.d));
       chartTitle = 'Прирост за день · наведите на столбик — детали и % дневной нормы';
     } else {
-      const wks = weekAgg(deltas);
+      const wks = weekAgg(dayRows);
       const wTip = (key, name) => r =>
         name + ' · ' + r.label + ': ' + (r[key] == null ? 'нет данных' : (r[key] >= 0 ? '+' : '') + r[key] + ' за неделю');
       hMetrics = [
@@ -747,6 +762,25 @@ window.__gvH = t => {
   } catch (e) { console.log('hist error:', e); }
   if (currentProjects) renderAll(currentProjects);
 };
+window.__gvP = t => {
+  try {
+    const counts = {};
+    gvRows(t).forEach(r => {
+      let d = r[0], ds = null;
+      if (d instanceof Date) {
+        ds = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+      } else {
+        d = String(d).trim();
+        let m = d.match(/^Date\((\d+),(\d+),(\d+)/);
+        if (m) ds = m[1] + '-' + String(+m[2] + 1).padStart(2, '0') + '-' + String(+m[3]).padStart(2, '0');
+        else { m = d.match(/^(\d{1,2})\.(\d{1,2})\.(\d{4})/); if (m) ds = m[3] + '-' + String(+m[2]).padStart(2, '0') + '-' + String(+m[1]).padStart(2, '0'); }
+      }
+      if (ds) counts[ds] = (counts[ds] || 0) + 1;
+    });
+    if (Object.keys(counts).length) BUYD = counts;
+  } catch (e) { console.log('buys error:', e); }
+  if (currentProjects) renderAll(currentProjects);
+};
 window.__gvW = t => {
   try {
     const rows = gvRows(t).map(r => {
@@ -805,6 +839,7 @@ gvLoad('Лист2', '__gvB');
 gvLoad('Лист3', '__gvS', 'A1:M10');
 gvLoad('Лист4', '__gvH', 'A1:D400');
 gvLoad('Лист5', '__gvW', 'A1:E400');
+gvLoad('Лист6', '__gvP', 'A1:A3000');
 </script>
 </body>
 </html>

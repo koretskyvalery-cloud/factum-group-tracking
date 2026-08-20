@@ -201,12 +201,27 @@ window.__gvM = t => {
     if (F.mgr[cm] != null) document.getElementById('hr-mgr').textContent = F.mgr[cm];
     if (F.leads[cm] != null) document.getElementById('mk-leads').textContent = F.leads[cm];
     if (F.crDep[cm] != null) document.getElementById('mk-cr').textContent = String(F.crDep[cm]).replace('.', ',') + '%';
-    if (F.buy[cm] != null) document.getElementById('sd-buy').textContent = F.buy[cm];
+    // покупки показываем из «Общий зачет» (__gvS); Лист1 — только фолбэк
+    if (window.SPER == null && F.buy[cm] != null) document.getElementById('sd-buy').textContent = F.buy[cm];
     if (F.net[cm] != null) document.getElementById('sd-net').textContent = F.net[cm];
     stampSub('Импорт авто под заказ');
   } catch (e) { console.log(e); }
 };
+window.__gvS = t => {
+  try {
+    // покупки — из «Общий зачет» (Лист3): там они отражаются вовремя
+    const per = {};
+    gvRows(t).forEach(r => { const y = Number(r[0]); if (y) per[y] = r.slice(1, 13).map(num); });
+    const sp = per[new Date().getFullYear()];
+    const cm = new Date().getMonth() + 1;
+    if (sp && typeof sp[cm - 1] === 'number') {
+      window.SPER = per;
+      document.getElementById('sd-buy').textContent = sp[cm - 1];
+    }
+  } catch (e) { console.log(e); }
+};
 gvLoad('Лист1', '__gvM');
+gvLoad('Лист3', '__gvS', 'A1:M10');
 </script>
 </body>
 </html>
