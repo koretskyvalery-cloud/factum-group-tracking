@@ -111,6 +111,8 @@
         <div class="metric-note" id="wm-cl-pct"></div>
       </div>
     </div>
+    <div class="chart-title" id="wm-byc-title" hidden>Тёплые по странам · сейчас</div>
+    <div class="dept-mini" id="wm-byc"></div>
     <div class="chart-title">По дням: новые тёплые, переходы в депозит и в закрыто (история копится с 20.08.2026)</div>
     <div class="chart" id="wm-chart"></div>
   </section>
@@ -300,11 +302,20 @@ window.__gvW = t => {
         const dm = d.match(/^Date\((\d+),(\d+),(\d+)/);
         if (dm) d = dm[1] + '-' + String(+dm[2] + 1).padStart(2, '0') + '-' + String(+dm[3]).padStart(2, '0');
       }
-      return [d, num(r[1]), num(r[2]), num(r[3]), num(r[4])];
+      return [d, num(r[1]), num(r[2]), num(r[3]), num(r[4]),
+              num(r[5]), num(r[6]), num(r[7]), num(r[8]), num(r[9]), num(r[10])];
     }).filter(r => /^\d{4}-\d{2}-\d{2}$/.test(r[0]));
     if (!rows.length) return;
     rows.sort((a, b) => a[0] < b[0] ? -1 : 1);
     const last = rows[rows.length - 1];
+    // разбивка «тёплых сейчас» по странам (воронкам amoCRM)
+    const CN = ['Украина', 'Молдова', 'Poland', 'Казахстан', 'Грузия', 'Армения'];
+    const cv = last.slice(5, 11);
+    if (cv.some(v => typeof v === 'number')) {
+      document.getElementById('wm-byc-title').hidden = false;
+      document.getElementById('wm-byc').innerHTML = CN.map((n, i) =>
+        `<div class="mini"><div class="mini-label">${n}</div><div class="mini-value">${cv[i] ?? '—'}</div></div>`).join('');
+    }
     const ym = String(last[0]).slice(0, 7);
     let neu = 0, dep = 0, cl = 0;
     rows.forEach(r => { if (String(r[0]).slice(0, 7) === ym) { neu += r[2] || 0; dep += r[3] || 0; cl += r[4] || 0; } });
@@ -339,7 +350,7 @@ window.__gvS = t => {
 drawQuarters();
 gvLoad('Лист1', '__gvM');
 gvLoad('Лист3', '__gvS', 'A1:M10');
-gvLoad('Лист5', '__gvW', 'A1:E400');
+gvLoad('Лист5', '__gvW', 'A1:K400');
 </script>
 </body>
 </html>
