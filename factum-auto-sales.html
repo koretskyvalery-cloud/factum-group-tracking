@@ -58,6 +58,13 @@
   .chart-title { font-size: 12px; color: var(--text-muted); margin: 4px 0 6px; }
   .chart svg { display: block; width: 100%; height: auto; }
   .note { font-size: 13px; color: var(--text-secondary); margin-top: 10px; line-height: 1.45; }
+  table.dep { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .dep th { text-align: left; font-size: 11px; color: var(--text-muted); font-weight: 600;
+            padding: 6px 8px; border-bottom: 1px solid var(--grid); }
+  .dep th.num, .dep td.num { text-align: right; font-variant-numeric: tabular-nums; }
+  .dep td { padding: 6px 8px; border-bottom: 1px solid var(--grid); }
+  .dep tr:last-child td { border-bottom: none; }
+  .dep tr.grp td { font-weight: 650; background: color-mix(in srgb, var(--series-1) 7%, var(--surface-1)); }
 </style>
 </head>
 <body>
@@ -86,6 +93,12 @@
   <section class="card">
     <div class="chart-title">Депозиты (чистые) и покупки по месяцам, 2026 (текущий — идёт) · покупки — из «Общий зачет»</div>
     <div class="chart" id="sd-chart"></div>
+  </section>
+
+  <h2 id="dept-h" hidden>По отделам · текущий месяц</h2>
+  <section class="card" id="dept-card" hidden>
+    <div id="dept-table"></div>
+    <div class="note">Страны — строки «Итого»; ниже — офисы. Покупки в этой разбивке — из «Аналитики продаж месячной» (могут отставать от «Общего зачета» на день-два).</div>
   </section>
 
   <h2>Тёплые лиды · amoCRM</h2>
@@ -194,24 +207,53 @@ function groupedColumns(labels, seriesArr) {
     `<span style="display:inline-flex;align-items:center;gap:6px;margin-right:16px;font-size:12px;color:var(--text-secondary)"><span style="width:10px;height:10px;border-radius:3px;background:${s.color}"></span>${esc(s.label)}</span>`).join('');
   return `<div style="margin-bottom:6px">${legend}</div><svg viewBox="0 0 ${W} ${H}" role="img">${out}</svg>`;
 }
-// разбор Лист1: факт-показатели по месяцам 2026
+// разбор Лист1: факт-показатели по месяцам 2026 (+ разбивка по колонкам-отделам)
 function parseFacts(rows) {
-  const F = { mgr:{}, leads:{}, dep:{}, net:{}, buy:{}, crDep:{}, crBuy:{} };
+  const F = { mgr:{}, leads:{}, dep:{}, net:{}, buy:{}, crDep:{}, crBuy:{}, head:null, rows:{} };
+  const cm = new Date().getMonth() + 1;
   let cur = null;
   for (const row of rows) {
     const a = String(row[0]||'').trim();
+    if (a === 'Месяц') { F.head = row.map(v => String(v||'').trim()); continue; }
     if (a && a.indexOf('2026') > -1) { const m = monthOf(a); cur = (m && a.indexOf('Факт') > -1) ? m : null; }
     if (!cur) continue;
     const crit = String(row[1]||'').trim();
-    if (crit.startsWith('Менеджеры с деп')) F.mgr[cur] = num(row[2]);
-    else if (crit === 'Лиды') F.leads[cur] = num(row[2]);
-    else if (crit.startsWith('Депозиты Факт')) F.net[cur] = num(row[2]);
+    if (crit.startsWith('Менеджеры с деп')) { F.mgr[cur] = num(row[2]); if (cur === cm) F.rows.mgr = row; }
+    else if (crit === 'Лиды') { F.leads[cur] = num(row[2]); if (cur === cm) F.rows.leads = row; }
+    else if (crit.startsWith('Депозиты Факт')) { F.net[cur] = num(row[2]); if (cur === cm) F.rows.net = row; }
     else if (crit === 'Депозиты') F.dep[cur] = num(row[2]);
-    else if (crit === 'Покупки') F.buy[cur] = num(row[2]);
-    else if (crit.startsWith('CR из лида в деп')) F.crDep[cur] = pct(row[2]);
+    else if (crit === 'Покупки') { F.buy[cur] = num(row[2]); if (cur === cm) F.rows.buy = row; }
+    else if (crit.startsWith('CR из лида в деп')) { F.crDep[cur] = pct(row[2]); if (cur === cm) F.rows.crd = row; }
     else if (crit.startsWith('CR из лида в пок')) F.crBuy[cur] = pct(row[2]);
   }
   return F;
+}
+// таблица по отделам: страны («Итого …») + офисы
+function renderDepts(F) {
+  if (!F.head || !F.rows.net) return;
+  const cell = (row, i) => row ? row[i] : null;
+  const items = [];
+  for (let i = 3; i < F.head.length; i++) {
+    const name = F.head[i];
+    if (!name || name.startsWith('Лидген') || name.startsWith('БТ')) continue;
+    const it = {
+      grp: name.startsWith('Итого'),
+      name: name.replace(/^Итого\s+/, ''),
+      mgr: num(cell(F.rows.mgr, i)), net: num(cell(F.rows.net, i)),
+      buy: num(cell(F.rows.buy, i)), leads: num(cell(F.rows.leads, i)), crd: pct(cell(F.rows.crd, i)),
+    };
+    if (it.mgr == null && it.net == null && it.buy == null && it.leads == null) continue; // пустые офисы
+    items.push(it);
+  }
+  if (!items.length) return;
+  const fmt = v => v == null ? '—' : v;
+  const fp = v => v == null ? '—' : String(v).replace('.', ',') + '%';
+  const rows = items.map(it =>
+    `<tr${it.grp ? ' class="grp"' : ''}><td>${esc(it.name)}</td><td class="num">${fmt(it.mgr)}</td><td class="num">${fmt(it.leads)}</td><td class="num">${fmt(it.net)}</td><td class="num">${fmt(it.buy)}</td><td class="num">${fp(it.crd)}</td></tr>`).join('');
+  document.getElementById('dept-table').innerHTML =
+    `<table class="dep"><thead><tr><th>Отдел</th><th class="num">Менеджеров</th><th class="num">Лиды</th><th class="num">Чистые депозиты</th><th class="num">Покупки</th><th class="num">CR в депозит</th></tr></thead><tbody>${rows}</tbody></table>`;
+  document.getElementById('dept-h').hidden = false;
+  document.getElementById('dept-card').hidden = false;
 }
 function series(map, cm) { const r=[]; for (let m=1;m<=cm;m++) r.push(map[m] ?? null); return r; }
 function gvLoad(sheet, handler, range) {
@@ -289,7 +331,7 @@ function renderSalesMain() {
   stampSub('Депозиты и покупки автомобилей');
 }
 window.__gvM = t => {
-  try { window.LF = parseFacts(gvRows(t)); renderSalesMain(); } catch (e) { console.log(e); }
+  try { window.LF = parseFacts(gvRows(t)); renderSalesMain(); renderDepts(window.LF); } catch (e) { console.log(e); }
 };
 window.__gvW = t => {
   try {
@@ -348,7 +390,7 @@ window.__gvS = t => {
   _gvS0(t);
 };
 drawQuarters();
-gvLoad('Лист1', '__gvM');
+gvLoad('Лист1', '__gvM', 'A1:S300');
 gvLoad('Лист3', '__gvS', 'A1:M10');
 gvLoad('Лист5', '__gvW', 'A1:K400');
 </script>
