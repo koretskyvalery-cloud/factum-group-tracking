@@ -229,12 +229,18 @@ function parseFacts(rows) {
   return F;
 }
 // таблица по отделам: страны («Итого …») + офисы
+// gviz отбрасывает текстовые заголовки числовых колонок — резервный список по текущей структуре «Аналитики»
+const DHEAD_FALLBACK = ['Месяц','Критерии','ВСЕГО','Итого UA','Итого MD','Итого PL','Итого GE','Итого AM',
+  'Kyiv I. M.','Kyiv A. S.','Odessa J. T.','Dnipro D. M.','Dnipro D. P.','Lviv D. D.','Lviv J. S.',
+  'Vinnitsa','Chişinău A.S.','Chişinău V.K.','Лидгены Укр'];
 function renderDepts(F) {
-  if (!F.head || !F.rows.net) return;
+  if (!F.rows.net) return;
+  let head = F.head;
+  if (!head || !String(head[3] || '').trim()) head = DHEAD_FALLBACK;
   const cell = (row, i) => row ? row[i] : null;
   const items = [];
-  for (let i = 3; i < F.head.length; i++) {
-    const name = F.head[i];
+  for (let i = 3; i < head.length; i++) {
+    const name = head[i];
     if (!name || name.startsWith('Лидген') || name.startsWith('БТ')) continue;
     const it = {
       grp: name.startsWith('Итого'),
