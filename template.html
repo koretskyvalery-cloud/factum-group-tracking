@@ -779,6 +779,8 @@ window.__gvP = t => {
   try {
     const counts = {};
     gvRows(t).forEach(r => {
+      // покупки с пометкой «USA B2B» — отдел B2B (Operator-EX), в аналитику Factum Auto не входят
+      if (String(r[5] || '').trim().toUpperCase() === 'USA B2B') return;
       let d = r[0], ds = null;
       if (d instanceof Date) {
         ds = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
@@ -851,7 +853,7 @@ gvLoad('Лист1', '__gvM');
 gvLoad('Лист2', '__gvB');
 gvLoad('Лист3', '__gvS', 'A1:M10');
 gvLoad('Лист4', '__gvH', 'A1:D400');
-gvLoad('Лист6', '__gvP', 'A1:A3000');
+gvLoad('Лист6', '__gvP', 'A1:F3000');
 </script>
 </body>
 </html>
