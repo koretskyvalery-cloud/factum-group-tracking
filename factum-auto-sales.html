@@ -91,7 +91,7 @@
   </section>
 
   <section class="card">
-    <div class="chart-title">Депозиты (чистые) и покупки по месяцам, 2026 (текущий — идёт) · покупки — из «Общий зачет»</div>
+    <div class="chart-title">Депозиты (всего и чистые), покупки и возвраты по месяцам, 2026 (текущий — идёт) · покупки — из «Общий зачет»</div>
     <div class="chart" id="sd-chart"></div>
   </section>
 
@@ -218,7 +218,8 @@ function parseFacts(rows) {
     if (a && a.indexOf('2026') > -1) { const m = monthOf(a); cur = (m && a.indexOf('Факт') > -1) ? m : null; }
     if (!cur) continue;
     const crit = String(row[1]||'').trim();
-    if (crit.startsWith('Менеджеры с деп')) { F.mgr[cur] = num(row[2]); if (cur === cm) F.rows.mgr = row; }
+    if (crit.startsWith('Возвраты Депоз')) F.ret = F.ret || {}, F.ret[cur] = num(row[2]);
+    else if (crit.startsWith('Менеджеры с деп')) { F.mgr[cur] = num(row[2]); if (cur === cm) F.rows.mgr = row; }
     else if (crit === 'Лиды') { F.leads[cur] = num(row[2]); if (cur === cm) F.rows.leads = row; }
     else if (crit.startsWith('Депозиты Факт')) { F.net[cur] = num(row[2]); if (cur === cm) F.rows.net = row; }
     else if (crit === 'Депозиты') F.dep[cur] = num(row[2]);
@@ -331,8 +332,10 @@ function renderSalesMain() {
   if (F.mgr[cm] != null) document.getElementById('sd-mgr').textContent = F.mgr[cm];
   const months = MONTH_ABBR.slice(0, cm);
   document.getElementById('sd-chart').innerHTML = groupedColumns(months, [
-    { label: 'Депозиты (чистые)', vals: series(F.net, cm), color: 'var(--series-1-lt)' },
-    { label: 'Покупки', vals: buyVals, color: 'var(--series-1)' },
+    { label: 'Депозиты (всего)', vals: series(F.dep, cm), color: 'var(--series-1-lt)' },
+    { label: 'Депозиты чистые', vals: series(F.net, cm), color: 'var(--series-1)' },
+    { label: 'Покупки', vals: buyVals, color: 'var(--series-3)' },
+    { label: 'Возвраты', vals: series(F.ret || {}, cm), color: 'var(--series-2)' },
   ]);
   stampSub('Депозиты и покупки автомобилей');
 }
