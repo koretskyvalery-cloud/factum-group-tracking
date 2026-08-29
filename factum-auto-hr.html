@@ -359,7 +359,7 @@ window.__gvHR = t => {
 window.__gvHist = t => {
   try {
     const el = document.getElementById('goal-delta');
-    if (!el) return;
+    if (!el) { setTimeout(() => window.__gvHist(t), 1200); return; }
     const rows = gvRows(t).map(r => {
       let d = r[0];
       if (typeof d === 'string') {
