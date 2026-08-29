@@ -14,6 +14,7 @@
     --series-1: #2a78d6; --series-1-lt: #86b6ef; --series-2: #eb6834; --series-3: #1baf7a;
     --good: #0ca30c; --warn: #fab219; --bad: #d03b3b;
     --st1: #c9e9d6; --st2: #8ad1ad; --st3: #46b385; --st4: #17915f;
+    --neut: #898781;
   }
   @media (prefers-color-scheme: dark) {
     :root:where(:not([data-theme="light"])) {
@@ -24,6 +25,7 @@
       --series-1: #3987e5; --series-1-lt: #6da7ec; --series-2: #d95926; --series-3: #199e70;
       --good: #22c55e; --warn: #fbbf24; --bad: #ef4444;
       --st1: #2e4a3b; --st2: #3d7a5c; --st3: #2ba173; --st4: #4ecb96;
+      --neut: #6f6e69;
     }
   }
   * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -38,19 +40,21 @@
   h2 { font-size: 15px; font-weight: 650; margin: 20px 0 10px; }
   .card { background: var(--surface-1); border: 1px solid var(--border); border-radius: 14px;
           padding: 16px 18px 14px; margin-bottom: 12px; }
-  .metrics { display: flex; gap: 28px; flex-wrap: wrap; margin-bottom: 4px; }
-  .metric { min-width: 120px; }
-  .metric-label { font-size: 12px; color: var(--text-secondary); margin-bottom: 3px; }
-  .metric-value { font-size: 30px; line-height: 1.05; font-weight: 600; }
-  .metric-value .u { font-size: 13px; font-weight: 400; color: var(--text-muted); }
-  .metric-note { font-size: 12px; color: var(--text-muted); margin-top: 3px; }
-  .split { display: flex; gap: 26px; flex-wrap: wrap; border-top: 1px solid var(--grid);
-           margin-top: 12px; padding-top: 12px; }
-  .split[hidden] { display: none; }
-  .s-label { font-size: 11px; color: var(--text-muted); margin-bottom: 2px; }
-  .s-val { font-size: 20px; font-weight: 650; line-height: 1.1; }
-  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 0 16px; align-items: start; }
-  @media (max-width: 860px) { .grid2 { grid-template-columns: 1fr; } }
+  .grid3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0 14px; align-items: start; }
+  @media (max-width: 900px) { .grid3 { grid-template-columns: 1fr; } }
+  .grid3 .card { height: calc(100% - 12px); }
+  .drow { display: flex; align-items: center; gap: 18px; flex-wrap: wrap; }
+  .drow svg { flex: none; }
+  .dstats { display: flex; flex-direction: column; gap: 7px; min-width: 130px; flex: 1; }
+  .lgv { display: flex; align-items: center; gap: 8px; font-size: 12.5px; color: var(--text-secondary); }
+  .lgv i { width: 10px; height: 10px; border-radius: 3px; flex: none; }
+  .lgv b { margin-left: auto; font-size: 13px; color: var(--text-primary); font-variant-numeric: tabular-nums; }
+  .bigstat { font-size: 26px; font-weight: 650; line-height: 1.1; }
+  .bigstat .u { font-size: 13px; font-weight: 400; color: var(--text-muted); }
+  .delta { font-size: 12.5px; margin-top: 6px; }
+  .delta.up { color: var(--good); font-weight: 600; }
+  .delta.down { color: var(--bad); font-weight: 600; }
+  .delta.flat { color: var(--text-muted); }
   table.hr { width: 100%; border-collapse: collapse; font-size: 13px; }
   table.hr th { text-align: right; font-weight: 600; font-size: 11.5px; color: var(--text-muted);
                 padding: 4px 8px; border-bottom: 1px solid var(--border); white-space: nowrap; }
@@ -88,40 +92,48 @@
 <div class="wrap">
   <a class="back" href="factum-auto.html">← Factum Auto</a><a class="back" href="index.html" style="margin-left:16px">⌂ На главную</a>
   <h1><span class="dot"></span>HR-отдел · Factum Auto</h1>
-  <div class="sub" id="sub">Состав команды и найм</div>
+  <div class="sub" id="sub">Найм и состав команды</div>
 
+  <h2 style="margin-top:14px" id="h-top">Найм менеджеров · план/факт</h2>
   <section class="card">
-    <div class="metrics">
-      <div class="metric">
-        <div class="metric-label">Отдел продаж — всего</div>
-        <div class="metric-value" id="m-sales">—</div>
-        <div class="metric-note" id="m-sales-note">менеджеры, стажёры, РОПы и директора</div>
-      </div>
-      <div class="metric">
-        <div class="metric-label">Отдел реализации</div>
-        <div class="metric-value" id="m-real">—</div>
-        <div class="metric-note">закупки и реализация</div>
-      </div>
-      <div class="metric">
-        <div class="metric-label">Открытых мест</div>
-        <div class="metric-value" id="m-vac">—</div>
-        <div class="metric-note">по всем городам</div>
-      </div>
-      <div class="metric">
-        <div class="metric-label">Найм за месяц</div>
-        <div class="metric-value" id="m-hire">—</div>
-        <div class="metric-note" id="m-hire-note">план / факт</div>
-      </div>
-    </div>
-    <div class="split" id="m-split" hidden>
-      <div class="sitem"><div class="s-label">Стажировка (до 1 мес)</div><div class="s-val" id="s-tr">—</div></div>
-      <div class="sitem"><div class="s-label">ОП 1–3 мес</div><div class="s-val" id="s-13">—</div></div>
-      <div class="sitem"><div class="s-label">ОП 3–6 мес</div><div class="s-val" id="s-36">—</div></div>
-      <div class="sitem"><div class="s-label">ОП 6+ мес</div><div class="s-val" id="s-6">—</div></div>
-      <div class="sitem"><div class="s-label">Руководители (РОП)</div><div class="s-val" id="s-rop">—</div></div>
-      <div class="sitem"><div class="s-label">Директора по продажам</div><div class="s-val" id="s-dir">—</div></div>
+    <div class="drow">
+      <div id="d-hire" class="muted" style="font-size:13px">Загрузка…</div>
+      <div class="dstats" id="d-hire-side" style="max-width:300px"></div>
     </div>
   </section>
+
+  <div class="grid3">
+    <div>
+      <h2>Годовая цель</h2>
+      <section class="card">
+        <div class="drow">
+          <div id="d-goal"></div>
+          <div class="dstats" id="d-goal-side"></div>
+        </div>
+        <div class="note">Цель — 100 менеджеров со стажем от 1 месяца (без подбора, РОПов и директоров).</div>
+      </section>
+    </div>
+    <div>
+      <h2>Отдел продаж — всего</h2>
+      <section class="card">
+        <div class="drow">
+          <div id="d-team"></div>
+          <div class="dstats" id="d-team-side"></div>
+        </div>
+        <div class="note">Включая подбор (реализацию), РОПов и обоих директоров по продажам.</div>
+      </section>
+    </div>
+    <div>
+      <h2>Продажники по стажу</h2>
+      <section class="card">
+        <div class="drow">
+          <div id="d-age"></div>
+          <div class="dstats" id="d-age-side"></div>
+        </div>
+        <div class="note">Менеджеры по продажам, без руководителей и подбора.</div>
+      </section>
+    </div>
+  </div>
 
   <h2>Состав отдела продаж по городам</h2>
   <section class="card">
@@ -139,7 +151,7 @@
     <div class="note">Стадии из вкладки «Дашборд менеджерів» файла Штат.xlsx (Bitrix24), обновляется ежедневно после 18:00.</div>
   </section>
 
-  <div class="grid2">
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:0 16px;align-items:start" class="g2">
     <div>
       <h2 id="h-hire">Найм по городам</h2>
       <section class="card">
@@ -162,6 +174,7 @@
   </div>
 
 </div>
+<style>@media (max-width:860px){ .g2 { grid-template-columns: 1fr !important; } }</style>
 <script>
 const esc = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;');
 const SHEET_ID = '10sbvUaWDkrJJqIC7ciuSsci21GuRMUV5P2TBhZCTF8U';
@@ -179,6 +192,29 @@ function gvLoad(sheet, handler, range) {
           '&sheet=' + encodeURIComponent(sheet) + '&range=' + (range || 'A1:C300') + '&headers=0&t=' + Date.now();
   document.body.appendChild(s);
 }
+function donut(segs, center, sub) {
+  const R = 45, C = 2 * Math.PI * R;
+  const vis = segs.filter(s => s.v > 0);
+  const tot = vis.reduce((a, s) => a + s.v, 0) || 1;
+  const gap = vis.length > 1 ? 3 : 0;
+  let acc = 0, out = '';
+  for (const s of vis) {
+    const frac = s.v / tot;
+    const len = Math.max(frac * C - gap, 0.8);
+    const ang = acc / tot * 360 - 90;
+    out += `<circle r="${R}" cx="62" cy="62" fill="none" stroke="${s.color}" stroke-width="13"` +
+           ` stroke-dasharray="${len} ${C - len}" transform="rotate(${ang} 62 62)">` +
+           `<title>${esc(s.label)}: ${s.v}</title></circle>`;
+    acc += s.v;
+  }
+  if (!vis.length) out = `<circle r="${R}" cx="62" cy="62" fill="none" stroke="var(--grid)" stroke-width="13"/>`;
+  return `<svg viewBox="0 0 124 124" width="124" height="124" role="img">${out}` +
+         `<text x="62" y="${sub ? 60 : 68}" text-anchor="middle" font-size="24" font-weight="650" fill="var(--text-primary)">${esc(String(center))}</text>` +
+         (sub ? `<text x="62" y="78" text-anchor="middle" font-size="10" fill="var(--text-muted)">${esc(sub)}</text>` : '') + `</svg>`;
+}
+function lgv(color, label, val) {
+  return `<div class="lgv"><i style="background:${color}"></i><span>${esc(label)}</span><b>${val}</b></div>`;
+}
 function pctCell(fact, plan) {
   if (!(plan > 0)) return '<span class="muted">—</span>';
   const p = Math.round(fact / plan * 100);
@@ -191,7 +227,8 @@ function barCell(fact, plan) {
   const col = plan > 0 && fact >= plan ? 'var(--good)' : 'var(--series-3)';
   return `<div class="bar-wrap"><span class="bar"><i style="width:${Math.round(p*100)}%;background:${col}"></i></span>${pctCell(fact, plan)}</div>`;
 }
-// Лист7: свод HR (META / REG / HIRE / REC)
+const MONS = ['январь','февраль','март','апрель','май','июнь','июль','август','сентябрь','октябрь','ноябрь','декабрь'];
+// Лист7: свод HR (META / SUM / REG / HIRE / REC)
 window.__gvHR = t => {
   try {
     const rows = gvRows(t);
@@ -210,33 +247,67 @@ window.__gvHR = t => {
     const real = reg.find(r => nm(r) === 'Реалізація');
     const cities = reg.filter(r => nm(r) !== 'РАЗОМ' && nm(r) !== 'Реалізація')
                       .sort((a,b) => (num(b[2])||0) - (num(a[2])||0));
-    // метрики
-    if (total) {
-      const rl = real || ['','',0,0,0,0,0,0,0];
-      document.getElementById('m-real').textContent = num(rl[2]) ?? '—';
-      document.getElementById('m-vac').textContent = num(total[7]) ?? '—';
-    }
-    if (sum) {
-      // SUM: всего | стажировка | 1-3 | 3-6 | 6+ | РОПы | директора
-      document.getElementById('m-sales').textContent = num(sum[1]) ?? '—';
-      const ids = ['s-tr','s-13','s-36','s-6','s-rop','s-dir'];
-      ids.forEach((id, i) => { document.getElementById(id).textContent = num(sum[i+2]) ?? '—'; });
-      document.getElementById('m-split').hidden = false;
-    } else if (total) {
-      const rl = real || ['','',0,0,0,0,0,0,0];
-      document.getElementById('m-sales').textContent = (num(total[2])||0) - (num(rl[2])||0);
-      document.getElementById('m-sales-note').textContent = 'в городах продаж, включая стажёров';
-    }
+    const mon = MONS[new Date().getMonth()];
+    document.getElementById('h-top').textContent = 'Найм менеджеров · ' + mon + ' · план/факт';
+    document.getElementById('h-hire').textContent = 'Найм по городам · ' + mon;
+    // === Верх: найм план/факт ===
     const hTot = hire.find(r => nm(r) === 'ИТОГО');
     if (hTot) {
-      document.getElementById('m-hire').innerHTML = (num(hTot[3])||0) + ' <span class="u">из ' + (num(hTot[2])||0) + '</span>';
-      document.getElementById('m-hire-note').textContent = 'осталось нанять ' + (num(hTot[4])||0);
+      const plan = num(hTot[2])||0, fact = num(hTot[3])||0, left = num(hTot[4])||0;
+      const pct = plan > 0 ? Math.round(fact/plan*100) : 0;
+      document.getElementById('d-hire').className = '';
+      document.getElementById('d-hire').innerHTML = donut(
+        [{v: fact, color: fact >= plan ? 'var(--good)' : 'var(--series-3)', label: 'Нанято'},
+         {v: Math.max(plan - fact, 0), color: 'var(--grid)', label: 'Осталось'}], pct + '%', fact + ' из ' + plan);
+      document.getElementById('d-hire-side').innerHTML =
+        `<div class="bigstat">${fact} <span class="u">нанято из ${plan} по плану</span></div>` +
+        lgv(fact >= plan ? 'var(--good)' : 'var(--series-3)', 'Нанято', fact) +
+        lgv('var(--grid)', 'Осталось нанять', left);
     }
-    // стек-бары по городам
+    // === Три кольца ===
+    if (sum) {
+      const tr = num(sum[2])||0, a13 = num(sum[3])||0, a36 = num(sum[4])||0, a6 = num(sum[5])||0;
+      const rop = num(sum[6])||0, dir = num(sum[7])||0;
+      const rl = num(sum[8]) ?? (real ? (num(real[2])||0) : 0);
+      const seas = a13 + a36 + a6;
+      const tAll = num(sum[1]) != null ? (num(sum[1]) + (num(sum[8]) != null ? 0 : rl)) : seas + tr + rop + dir + rl;
+      // 1. годовая цель
+      const GOAL = 100;
+      document.getElementById('d-goal').innerHTML = donut(
+        [{v: Math.min(seas, GOAL), color: 'var(--series-3)', label: 'Есть'},
+         {v: Math.max(GOAL - seas, 0), color: 'var(--grid)', label: 'До цели'}],
+        Math.round(seas/GOAL*100) + '%', seas + ' из ' + GOAL);
+      document.getElementById('d-goal-side').innerHTML =
+        `<div class="bigstat">${seas} <span class="u">из ${GOAL}</span></div>` +
+        `<div class="delta flat" id="goal-delta">динамика за месяц: считаем…</div>`;
+      // 2. весь отдел продаж
+      const groups = [
+        {v: seas, color: 'var(--st4)', label: 'Менеджеры 1+ мес'},
+        {v: tr, color: 'var(--st1)', label: 'Стажёры'},
+        {v: rl, color: 'var(--series-1)', label: 'Подбор (реализация)'},
+        {v: rop, color: 'var(--series-2)', label: 'РОПы'},
+        {v: dir, color: 'var(--neut)', label: 'Директора'}
+      ];
+      const other = tAll - groups.reduce((a,g) => a + g.v, 0);
+      if (other > 0) groups.push({v: other, color: 'var(--grid)', label: 'Стадия не указана'});
+      document.getElementById('d-team').innerHTML = donut(groups, tAll, 'человек');
+      document.getElementById('d-team-side').innerHTML = groups.map(g => lgv(g.color, g.label, g.v)).join('');
+      // 3. продажники по стажу
+      const ages = [
+        {v: tr, color: 'var(--st1)', label: 'До месяца'},
+        {v: a13, color: 'var(--st2)', label: '1–3 мес'},
+        {v: a36, color: 'var(--st3)', label: '3–6 мес'},
+        {v: a6, color: 'var(--st4)', label: '6+ мес'}
+      ];
+      document.getElementById('d-age').innerHTML = donut(ages, tr + seas, 'менеджеров');
+      document.getElementById('d-age-side').innerHTML = ages.map(g => lgv(g.color, g.label, g.v)).join('');
+    }
+    // === Стек-бары по городам ===
     const STG = [['Стажировка','var(--st1)',3],['ОП 1–3 мес','var(--st2)',4],['ОП 3–6 мес','var(--st3)',5],['ОП 6+ мес','var(--st4)',6]];
     const maxT = Math.max(...cities.map(r => num(r[2])||0), 1);
-    document.getElementById('staff-bars').className = '';
-    document.getElementById('staff-bars').innerHTML = cities.map(r => {
+    const sb = document.getElementById('staff-bars');
+    sb.className = '';
+    sb.innerHTML = cities.map(r => {
       const tot = num(r[2])||0;
       const segs = STG.map(([lab,col,ix]) => {
         const v = num(r[ix])||0;
@@ -247,8 +318,8 @@ window.__gvHR = t => {
              `<span class="tr" style="max-width:${Math.round(tot/maxT*100)}%">${segs}</span>` +
              `<span class="tt">${tot}</span></div>`;
     }).join('');
-    // таблица состава: города по убыванию, реализация отдельной строкой, итог
-    const cellz = v => { const n = num(v); return n ? n : '<span class="muted"></span>'; };
+    // === Таблица состава ===
+    const cellz = v => { const n = num(v); return n ? n : ''; };
     const rowHtml = (r, cls) =>
       `<tr${cls?` class="${cls}"`:''}><td>${esc(nm(r))}</td><td>${num(r[2])??''}</td><td>${cellz(r[3])}</td><td>${cellz(r[4])}</td><td>${cellz(r[5])}</td><td>${cellz(r[6])}</td><td>${cellz(r[7])}</td></tr>`;
     const tb = document.querySelector('#t-staff tbody');
@@ -257,7 +328,7 @@ window.__gvHR = t => {
         (real ? rowHtml(real, 'dim') : '') +
         (total ? `<tr class="total"><td>Итого</td><td>${num(total[2])}</td><td>${num(total[3])}</td><td>${num(total[4])}</td><td>${num(total[5])}</td><td>${num(total[6])}</td><td>${num(total[7])}</td></tr>` : '');
     }
-    // найм по городам (сортировка: невыполненные сверху, по размеру цели)
+    // === Найм по городам ===
     const hb = document.querySelector('#t-hire tbody');
     const hCities = hire.filter(r => nm(r) !== 'ИТОГО')
       .sort((a,b) => {
@@ -270,7 +341,7 @@ window.__gvHR = t => {
         return `<tr><td>${esc(nm(r))}</td><td>${plan}</td><td>${fact}</td><td style="text-align:left">${barCell(fact, plan)}</td></tr>`;
       }).join('') + (hTot ? `<tr class="total"><td>Итого</td><td>${num(hTot[2])}</td><td>${num(hTot[3])}</td><td style="text-align:left">${barCell(num(hTot[3])||0, num(hTot[2])||0)}</td></tr>` : '');
     }
-    // рекрутеры (по факту, убывание)
+    // === Рекрутеры ===
     const rb = document.querySelector('#t-rec tbody');
     const recs = rec.filter(r => nm(r) !== 'ИТОГО').sort((a,b) => (num(b[2])||0) - (num(a[2])||0));
     if (recs.length) {
@@ -279,14 +350,38 @@ window.__gvHR = t => {
         return `<tr><td>${esc(nm(r))}</td><td>${plan}</td><td>${fact}</td><td style="text-align:left">${barCell(fact, plan)}</td></tr>`;
       }).join('');
     }
-    const MONS = ['январь','февраль','март','апрель','май','июнь','июль','август','сентябрь','октябрь','ноябрь','декабрь'];
-    document.getElementById('h-hire').textContent = 'Найм по городам · ' + MONS[new Date().getMonth()];
     if (meta) {
-      document.getElementById('sub').textContent = 'Состав команды и найм · данные Bitrix24 от ' + String(meta[1]||'');
+      document.getElementById('sub').textContent = 'Найм и состав команды · данные Bitrix24 от ' + String(meta[1]||'');
     }
   } catch (e) { console.log(e); }
 };
+// Лист8: история численности (Дата | менеджеры 1+ мес | всего)
+window.__gvHist = t => {
+  try {
+    const el = document.getElementById('goal-delta');
+    if (!el) return;
+    const rows = gvRows(t).map(r => {
+      let d = r[0];
+      if (typeof d === 'string') {
+        const m = d.match(/Date\((\d+),(\d+),(\d+)/);
+        if (m) d = new Date(+m[1], +m[2], +m[3]);
+        else d = new Date(String(d).replace(/\./g,'-'));
+      }
+      return { d, v: num(r[1]) };
+    }).filter(r => r.d instanceof Date && !isNaN(r.d) && r.v != null);
+    const now = new Date();
+    const cur = rows.filter(r => r.d.getFullYear() === now.getFullYear() && r.d.getMonth() === now.getMonth())
+                    .sort((a,b) => a.d - b.d);
+    if (cur.length < 2) { el.textContent = 'динамика за месяц: учёт с ' +
+      (cur.length ? String(cur[0].d.getDate()).padStart(2,'0') + '.' + String(cur[0].d.getMonth()+1).padStart(2,'0') : 'сегодня'); return; }
+    const delta = cur[cur.length-1].v - cur[0].v;
+    if (delta > 0) { el.className = 'delta up'; el.textContent = '▲ +' + delta + ' за месяц'; }
+    else if (delta < 0) { el.className = 'delta down'; el.textContent = '▼ ' + delta + ' за месяц'; }
+    else { el.className = 'delta flat'; el.textContent = 'без изменений за месяц'; }
+  } catch (e) { console.log(e); }
+};
 gvLoad('Лист7', '__gvHR', 'A1:I80');
+gvLoad('Лист8', '__gvHist', 'A1:C400');
 </script>
 </body>
 </html>
