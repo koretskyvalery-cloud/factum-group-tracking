@@ -44,6 +44,11 @@
   .metric-value { font-size: 30px; line-height: 1.05; font-weight: 600; }
   .metric-value .u { font-size: 13px; font-weight: 400; color: var(--text-muted); }
   .metric-note { font-size: 12px; color: var(--text-muted); margin-top: 3px; }
+  .split { display: flex; gap: 26px; flex-wrap: wrap; border-top: 1px solid var(--grid);
+           margin-top: 12px; padding-top: 12px; }
+  .split[hidden] { display: none; }
+  .s-label { font-size: 11px; color: var(--text-muted); margin-bottom: 2px; }
+  .s-val { font-size: 20px; font-weight: 650; line-height: 1.1; }
   .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 0 16px; align-items: start; }
   @media (max-width: 860px) { .grid2 { grid-template-columns: 1fr; } }
   table.hr { width: 100%; border-collapse: collapse; font-size: 13px; }
@@ -88,14 +93,9 @@
   <section class="card">
     <div class="metrics">
       <div class="metric">
-        <div class="metric-label">Менеджеров в отделе продаж</div>
+        <div class="metric-label">Отдел продаж — всего</div>
         <div class="metric-value" id="m-sales">—</div>
-        <div class="metric-note" id="m-sales-note">прошли стажировку</div>
-      </div>
-      <div class="metric">
-        <div class="metric-label">На стажировке</div>
-        <div class="metric-value" id="m-trainee">—</div>
-        <div class="metric-note">1–28 дней</div>
+        <div class="metric-note" id="m-sales-note">менеджеры, стажёры, РОПы и директора</div>
       </div>
       <div class="metric">
         <div class="metric-label">Отдел реализации</div>
@@ -112,6 +112,14 @@
         <div class="metric-value" id="m-hire">—</div>
         <div class="metric-note" id="m-hire-note">план / факт</div>
       </div>
+    </div>
+    <div class="split" id="m-split" hidden>
+      <div class="sitem"><div class="s-label">Стажировка (до 1 мес)</div><div class="s-val" id="s-tr">—</div></div>
+      <div class="sitem"><div class="s-label">ОП 1–3 мес</div><div class="s-val" id="s-13">—</div></div>
+      <div class="sitem"><div class="s-label">ОП 3–6 мес</div><div class="s-val" id="s-36">—</div></div>
+      <div class="sitem"><div class="s-label">ОП 6+ мес</div><div class="s-val" id="s-6">—</div></div>
+      <div class="sitem"><div class="s-label">Руководители (РОП)</div><div class="s-val" id="s-rop">—</div></div>
+      <div class="sitem"><div class="s-label">Директора по продажам</div><div class="s-val" id="s-dir">—</div></div>
     </div>
   </section>
 
@@ -188,10 +196,11 @@ window.__gvHR = t => {
   try {
     const rows = gvRows(t);
     const reg = [], hire = [], rec = [];
-    let meta = null;
+    let meta = null, sum = null;
     for (const r of rows) {
       const k = String(r[0]||'').trim();
       if (k === 'META') meta = r;
+      else if (k === 'SUM') sum = r;
       else if (k === 'REG') reg.push(r);
       else if (k === 'HIRE') hire.push(r);
       else if (k === 'REC') rec.push(r);
@@ -204,13 +213,19 @@ window.__gvHR = t => {
     // метрики
     if (total) {
       const rl = real || ['','',0,0,0,0,0,0,0];
-      const salesAll = (num(total[2])||0) - (num(rl[2])||0);
-      const trainee = (num(total[3])||0) - (num(rl[3])||0);
-      document.getElementById('m-sales').textContent = salesAll - trainee;
-      document.getElementById('m-sales-note').textContent = 'из ' + salesAll + ' в городах продаж';
-      document.getElementById('m-trainee').textContent = trainee;
       document.getElementById('m-real').textContent = num(rl[2]) ?? '—';
       document.getElementById('m-vac').textContent = num(total[7]) ?? '—';
+    }
+    if (sum) {
+      // SUM: всего | стажировка | 1-3 | 3-6 | 6+ | РОПы | директора
+      document.getElementById('m-sales').textContent = num(sum[1]) ?? '—';
+      const ids = ['s-tr','s-13','s-36','s-6','s-rop','s-dir'];
+      ids.forEach((id, i) => { document.getElementById(id).textContent = num(sum[i+2]) ?? '—'; });
+      document.getElementById('m-split').hidden = false;
+    } else if (total) {
+      const rl = real || ['','',0,0,0,0,0,0,0];
+      document.getElementById('m-sales').textContent = (num(total[2])||0) - (num(rl[2])||0);
+      document.getElementById('m-sales-note').textContent = 'в городах продаж, включая стажёров';
     }
     const hTot = hire.find(r => nm(r) === 'ИТОГО');
     if (hTot) {
