@@ -264,9 +264,9 @@ window.__gvHR = t => {
         return `<tr><td>${esc(nm(r))}</td><td>${plan}</td><td>${fact}</td><td style="text-align:left">${barCell(fact, plan)}</td></tr>`;
       }).join('');
     }
+    const MONS = ['январь','февраль','март','апрель','май','июнь','июль','август','сентябрь','октябрь','ноябрь','декабрь'];
+    document.getElementById('h-hire').textContent = 'Найм по городам · ' + MONS[new Date().getMonth()];
     if (meta) {
-      const mon = String(meta[2]||'').trim();
-      if (mon) document.getElementById('h-hire').textContent = 'Найм по городам · ' + mon.toLowerCase();
       document.getElementById('sub').textContent = 'Состав команды и найм · данные Bitrix24 от ' + String(meta[1]||'');
     }
   } catch (e) { console.log(e); }
