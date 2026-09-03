@@ -128,6 +128,11 @@
         <div class="metric-value" id="wm-cl">—</div>
         <div class="metric-note" id="wm-cl-pct"></div>
       </div>
+      <div class="metric">
+        <div class="metric-label">Из тёплых → в холод</div>
+        <div class="metric-value" id="wm-cold">—</div>
+        <div class="metric-note" id="wm-cold-pct">вернулись на более ранний этап · учёт с 03.09</div>
+      </div>
     </div>
     <div class="chart-title" id="wm-byc-title" hidden>Тёплые по странам · сейчас</div>
     <div class="dept-mini" id="wm-byc"></div>
@@ -138,6 +143,33 @@
     </div>
     <div class="chart-title" id="wm-chart-title">По дням: новые тёплые, переходы в депозит и в закрыто (история копится с 20.08.2026)</div>
     <div class="chart" id="wm-chart"></div>
+  </section>
+
+  <h2>Задачи · amoCRM</h2>
+  <section class="card">
+    <div class="metrics">
+      <div class="metric">
+        <div class="metric-label">Создано сегодня</div>
+        <div class="metric-value" id="tk-add">—</div>
+      </div>
+      <div class="metric">
+        <div class="metric-label">Выполнено сегодня</div>
+        <div class="metric-value" id="tk-done">—</div>
+      </div>
+      <div class="metric">
+        <div class="metric-label">Просрочено сейчас</div>
+        <div class="metric-value" id="tk-over">—</div>
+        <div class="metric-note">открытые задачи с истёкшим сроком</div>
+      </div>
+      <div class="metric">
+        <div class="metric-label">Перенесено сегодня</div>
+        <div class="metric-value" id="tk-moved">—</div>
+        <div class="metric-note">перенос срока задачи</div>
+      </div>
+    </div>
+    <div class="chart-title">По дням: создано, выполнено и перенесено · линия «просрочено» — уровень на конец дня (учёт с 03.09.2026)</div>
+    <div class="chart" id="tk-chart"><span class="muted" style="font-size:13px">Данные появятся после первого прогона синхронизации…</span></div>
+    <div class="note">Связь «объём работы → результат»: сопоставляйте с динамикой тёплых и депозитов выше. Деление по отделам и менеджерам — следующий шаг.</div>
   </section>
 
   <h2>Аналитика продаж в ретроспективе</h2>
@@ -364,7 +396,7 @@ window.__gvW = t => {
         if (dm) d = dm[1] + '-' + String(+dm[2] + 1).padStart(2, '0') + '-' + String(+dm[3]).padStart(2, '0');
       }
       return [d, num(r[1]), num(r[2]), num(r[3]), num(r[4]),
-              num(r[5]), num(r[6]), num(r[7]), num(r[8]), num(r[9]), num(r[10])];
+              num(r[5]), num(r[6]), num(r[7]), num(r[8]), num(r[9]), num(r[10]), num(r[11])];
     }).filter(r => /^\d{4}-\d{2}-\d{2}$/.test(r[0]));
     if (!rows.length) return;
     rows.sort((a, b) => a[0] < b[0] ? -1 : 1);
@@ -378,16 +410,18 @@ window.__gvW = t => {
         `<div class="mini"><div class="mini-label">${n}</div><div class="mini-value">${cv[i] ?? '—'}</div></div>`).join('');
     }
     const ym = String(last[0]).slice(0, 7);
-    let neu = 0, dep = 0, cl = 0;
-    rows.forEach(r => { if (String(r[0]).slice(0, 7) === ym) { neu += r[2] || 0; dep += r[3] || 0; cl += r[4] || 0; } });
+    let neu = 0, dep = 0, cl = 0, cold = 0;
+    rows.forEach(r => { if (String(r[0]).slice(0, 7) === ym) { neu += r[2] || 0; dep += r[3] || 0; cl += r[4] || 0; cold += r[11] || 0; } });
     document.getElementById('wm-now').textContent = last[1] ?? '—';
     document.getElementById('wm-new').textContent = '+' + neu;
     document.getElementById('wm-dep').textContent = dep;
     document.getElementById('wm-cl').textContent = cl;
-    const out = dep + cl;
+    document.getElementById('wm-cold').textContent = cold;
+    const out = dep + cl + cold;
     if (out > 0) {
       document.getElementById('wm-dep-pct').textContent = Math.round(dep / out * 100) + '% исходов';
       document.getElementById('wm-cl-pct').textContent = Math.round(cl / out * 100) + '% исходов';
+      document.getElementById('wm-cold-pct').textContent = Math.round(cold / out * 100) + '% исходов · учёт с 03.09';
     }
     window.WROWS = rows;
     renderWarm(window.WMODE || 'd');
@@ -398,7 +432,7 @@ function warmGroups(rows, mode) {
   const dl = d => d.slice(8, 10) + '.' + d.slice(5, 7);
   if (mode === 'd') {
     const days = rows.slice(-21);
-    return days.map(r => ({ label: dl(r[0]), neu: r[2] || 0, dep: r[3] || 0, cl: r[4] || 0, now: r[1] }));
+    return days.map(r => ({ label: dl(r[0]), neu: r[2] || 0, dep: r[3] || 0, cl: r[4] || 0, cold: r[11] || 0, now: r[1] }));
   }
   const g = new Map();
   for (const r of rows) {
@@ -414,9 +448,9 @@ function warmGroups(rows, mode) {
       key = r[0].slice(0, 7);
       label = MON3[+r[0].slice(5, 7) - 1];
     }
-    if (!g.has(key)) g.set(key, { label, neu: 0, dep: 0, cl: 0, now: null });
+    if (!g.has(key)) g.set(key, { label, neu: 0, dep: 0, cl: 0, cold: 0, now: null });
     const o = g.get(key);
-    o.neu += r[2] || 0; o.dep += r[3] || 0; o.cl += r[4] || 0;
+    o.neu += r[2] || 0; o.dep += r[3] || 0; o.cl += r[4] || 0; o.cold += r[11] || 0;
     if (typeof r[1] === 'number') o.now = r[1]; // уровень на конец периода
   }
   return [...g.keys()].sort().map(k => g.get(k)).slice(-12);
@@ -438,11 +472,42 @@ function renderWarm(mode) {
     { label: 'Новые тёплые', vals: gs.map(o => o.neu), color: 'var(--series-3)' },
     { label: 'В депозит', vals: gs.map(o => o.dep), color: 'var(--series-1)' },
     { label: 'В закрыто', vals: gs.map(o => o.cl), color: 'var(--text-muted)' },
+    { label: 'В холод', vals: gs.map(o => o.cold), color: 'var(--series-2)' },
   ]);
 }
 document.getElementById('wm-tabs').addEventListener('click', e => {
   const b = e.target.closest('button'); if (b) renderWarm(b.dataset.mode);
 });
+window.__gvT = t => {
+  try {
+    const rows = gvRows(t).map(r => {
+      let d = r[0];
+      if (d instanceof Date) {
+        d = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+      } else {
+        d = String(d).trim();
+        const dm = d.match(/^Date\((\d+),(\d+),(\d+)/);
+        if (dm) d = dm[1] + '-' + String(+dm[2] + 1).padStart(2, '0') + '-' + String(+dm[3]).padStart(2, '0');
+      }
+      return [d, num(r[1]), num(r[2]), num(r[3]), num(r[4])];
+    }).filter(r => /^\d{4}-\d{2}-\d{2}$/.test(r[0]));
+    if (!rows.length) return;
+    rows.sort((a, b) => a[0] < b[0] ? -1 : 1);
+    const last = rows[rows.length - 1];
+    document.getElementById('tk-add').textContent = last[1] ?? '—';
+    document.getElementById('tk-done').textContent = last[2] ?? '—';
+    document.getElementById('tk-over').textContent = last[3] ?? '—';
+    document.getElementById('tk-moved').textContent = last[4] ?? '—';
+    const days = rows.slice(-21);
+    const dl = d => d.slice(8, 10) + '.' + d.slice(5, 7);
+    document.getElementById('tk-chart').innerHTML = groupedColumns(days.map(r => dl(String(r[0]))), [
+      { label: 'Создано', vals: days.map(r => r[1]), color: 'var(--series-1)' },
+      { label: 'Выполнено', vals: days.map(r => r[2]), color: 'var(--series-3)' },
+      { label: 'Перенесено', vals: days.map(r => r[4]), color: 'var(--series-2)' },
+      { label: 'Просрочено (уровень)', vals: days.map(r => r[3]), color: 'var(--text-muted)' },
+    ]);
+  } catch (e) { console.log(e); }
+};
 const _gvS0 = window.__gvS;
 window.__gvS = t => {
   try {
@@ -456,7 +521,8 @@ window.__gvS = t => {
 drawQuarters();
 gvLoad('Лист1', '__gvM', 'A1:S300');
 gvLoad('Лист3', '__gvS', 'A1:M10');
-gvLoad('Лист5', '__gvW', 'A1:K400');
+gvLoad('Лист5', '__gvW', 'A1:L400');
+gvLoad('Лист10', '__gvT', 'A1:E400');
 </script>
 </body>
 </html>
