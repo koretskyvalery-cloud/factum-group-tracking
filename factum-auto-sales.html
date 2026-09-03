@@ -56,6 +56,11 @@
   .metric-value { font-size: 30px; line-height: 1.05; font-weight: 600; }
   .metric-note { font-size: 12px; color: var(--text-muted); margin-top: 3px; }
   .chart-title { font-size: 12px; color: var(--text-muted); margin: 4px 0 6px; }
+  .tabs { display: flex; gap: 8px; flex-wrap: wrap; margin: 4px 0 10px; }
+  .tabs button { font: inherit; font-size: 12.5px; padding: 4px 12px; border-radius: 999px;
+                 border: 1px solid var(--border); background: transparent; color: var(--text-secondary); cursor: pointer; }
+  .tabs button.on { background: color-mix(in srgb, var(--series-1) 12%, transparent);
+                    border-color: var(--series-1); color: var(--series-1); font-weight: 600; }
   .chart svg { display: block; width: 100%; height: auto; }
   .note { font-size: 13px; color: var(--text-secondary); margin-top: 10px; line-height: 1.45; }
   table.dep { width: 100%; border-collapse: collapse; font-size: 13px; }
@@ -126,7 +131,12 @@
     </div>
     <div class="chart-title" id="wm-byc-title" hidden>Тёплые по странам · сейчас</div>
     <div class="dept-mini" id="wm-byc"></div>
-    <div class="chart-title">По дням: новые тёплые, переходы в депозит и в закрыто (история копится с 20.08.2026)</div>
+    <div class="tabs" id="wm-tabs">
+      <button class="on" data-mode="d">По дням</button>
+      <button data-mode="w">По неделям</button>
+      <button data-mode="m">По месяцам</button>
+    </div>
+    <div class="chart-title" id="wm-chart-title">По дням: новые тёплые, переходы в депозит и в закрыто (история копится с 20.08.2026)</div>
     <div class="chart" id="wm-chart"></div>
   </section>
 
@@ -379,15 +389,60 @@ window.__gvW = t => {
       document.getElementById('wm-dep-pct').textContent = Math.round(dep / out * 100) + '% исходов';
       document.getElementById('wm-cl-pct').textContent = Math.round(cl / out * 100) + '% исходов';
     }
-    const days = rows.slice(-21);
-    const dl = d => d.slice(8, 10) + '.' + d.slice(5, 7);
-    document.getElementById('wm-chart').innerHTML = groupedColumns(days.map(r => dl(String(r[0]))), [
-      { label: 'Новые тёплые', vals: days.map(r => r[2]), color: 'var(--series-3)' },
-      { label: 'В депозит', vals: days.map(r => r[3]), color: 'var(--series-1)' },
-      { label: 'В закрыто', vals: days.map(r => r[4]), color: 'var(--text-muted)' },
-    ]);
+    window.WROWS = rows;
+    renderWarm(window.WMODE || 'd');
   } catch (e) { console.log(e); }
 };
+const MON3 = ['Янв','Фев','Мар','Апр','Май','Июн','Июл','Авг','Сен','Окт','Ноя','Дек'];
+function warmGroups(rows, mode) {
+  const dl = d => d.slice(8, 10) + '.' + d.slice(5, 7);
+  if (mode === 'd') {
+    const days = rows.slice(-21);
+    return days.map(r => ({ label: dl(r[0]), neu: r[2] || 0, dep: r[3] || 0, cl: r[4] || 0, now: r[1] }));
+  }
+  const g = new Map();
+  for (const r of rows) {
+    let key, label;
+    if (mode === 'w') {
+      const d = new Date(r[0] + 'T12:00:00');
+      const mon = new Date(d); mon.setDate(d.getDate() - ((d.getDay() + 6) % 7));
+      const sun = new Date(mon); sun.setDate(mon.getDate() + 6);
+      const f = x => String(x.getDate()).padStart(2,'0') + '.' + String(x.getMonth()+1).padStart(2,'0');
+      key = mon.toISOString().slice(0, 10);
+      label = f(mon) + '–' + f(sun);
+    } else {
+      key = r[0].slice(0, 7);
+      label = MON3[+r[0].slice(5, 7) - 1];
+    }
+    if (!g.has(key)) g.set(key, { label, neu: 0, dep: 0, cl: 0, now: null });
+    const o = g.get(key);
+    o.neu += r[2] || 0; o.dep += r[3] || 0; o.cl += r[4] || 0;
+    if (typeof r[1] === 'number') o.now = r[1]; // уровень на конец периода
+  }
+  return [...g.keys()].sort().map(k => g.get(k)).slice(-12);
+}
+function renderWarm(mode) {
+  window.WMODE = mode;
+  const rows = window.WROWS || [];
+  if (!rows.length) return;
+  document.querySelectorAll('#wm-tabs button').forEach(b => b.classList.toggle('on', b.dataset.mode === mode));
+  const T = {
+    d: 'По дням: новые тёплые, переходы в депозит и в закрыто (история копится с 20.08.2026)',
+    w: 'По неделям: суммы за неделю · в скобках у подписи — тёплых на конец недели',
+    m: 'По месяцам: суммы за месяц (август — с 20.08) · в скобках — тёплых на конец месяца',
+  };
+  document.getElementById('wm-chart-title').textContent = T[mode];
+  const gs = warmGroups(rows, mode);
+  const labels = gs.map(o => mode === 'd' ? o.label : (o.now != null ? o.label + ' (' + o.now + ')' : o.label));
+  document.getElementById('wm-chart').innerHTML = groupedColumns(labels, [
+    { label: 'Новые тёплые', vals: gs.map(o => o.neu), color: 'var(--series-3)' },
+    { label: 'В депозит', vals: gs.map(o => o.dep), color: 'var(--series-1)' },
+    { label: 'В закрыто', vals: gs.map(o => o.cl), color: 'var(--text-muted)' },
+  ]);
+}
+document.getElementById('wm-tabs').addEventListener('click', e => {
+  const b = e.target.closest('button'); if (b) renderWarm(b.dataset.mode);
+});
 const _gvS0 = window.__gvS;
 window.__gvS = t => {
   try {
