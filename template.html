@@ -216,6 +216,16 @@
     white-space: nowrap;
   }
   .detail-link:hover { text-decoration: underline; }
+  /* Две кнопки в шапке карточки: детальная аналитика и цели/вехи */
+  .head-actions { margin-left: auto; display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
+  .btn-link {
+    font-size: 12px; font-weight: 600; text-decoration: none; white-space: nowrap;
+    color: var(--series-1);
+    padding: 4px 11px; border-radius: 999px;
+    border: 1px solid color-mix(in srgb, var(--series-1) 35%, var(--surface-1));
+    background: color-mix(in srgb, var(--series-1) 8%, var(--surface-1));
+  }
+  .btn-link:hover { background: color-mix(in srgb, var(--series-1) 16%, var(--surface-1)); }
   .legend { display: flex; gap: 16px; }
   .legend-item { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text-secondary); }
   .swatch { width: 10px; height: 10px; border-radius: 3px; flex: none; }
@@ -621,7 +631,10 @@ function renderCard(p) {
               : `<span class="dot" style="background:${p.color}"></span>`}
         <span class="proj-name">${esc(p.name)}</span>
         ${p.demo ? '<span class="demo-badge">демо-данные</span>' : ''}
-        ${hasAlt ? '<a class="detail-link" href="factum-auto.html">Детальная аналитика →</a>' : ''}
+        ${hasAlt ? `<div class="head-actions">
+          <a class="btn-link" href="factum-auto.html">Детальная аналитика</a>
+          <a class="btn-link" href="goals.html">Цели и вехи 2026</a>
+        </div>` : ''}
       </div>
       <div class="proj-desc">${esc(p.desc)}</div>
       <div class="metrics">${p.metrics.map(m => renderMetric(m, p.color)).join('')}</div>
