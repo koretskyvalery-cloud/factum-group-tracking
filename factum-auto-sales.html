@@ -524,13 +524,19 @@ window.__gvF = t => {
     }).filter(r => /^\d{4}-\d{2}-\d{2}$/.test(r[0]));
     if (!rows.length) return;
     rows.sort((a, b) => a[0] < b[0] ? -1 : 1);
+    const nowD = new Date();
+    const todayStr = nowD.getFullYear() + '-' + String(nowD.getMonth() + 1).padStart(2, '0') + '-' + String(nowD.getDate()).padStart(2, '0');
     const last = rows[rows.length - 1];
-    const tot = (last[2] ?? 0) + (last[6] ?? 0) + (last[1] ?? 0);
-    document.getElementById('tk-hum').textContent = last[2] ?? '—';
-    document.getElementById('tk-hum-note').textContent = tot ? Math.round((last[2] || 0) * 100 / tot) + '% всех созданных' : '';
-    document.getElementById('tk-ai').textContent = last[6] ?? '—';
-    document.getElementById('tk-ai-note').textContent = tot ? Math.round((last[6] || 0) * 100 / tot) + '% всех созданных' : '';
-    document.getElementById('tk-tel').textContent = last[1] ?? '—';
+    if (last[0] === todayStr) {
+      const tot = (last[2] ?? 0) + (last[6] ?? 0) + (last[1] ?? 0);
+      document.getElementById('tk-hum').textContent = last[2] ?? '—';
+      document.getElementById('tk-hum-note').textContent = tot ? Math.round((last[2] || 0) * 100 / tot) + '% всех созданных' : '';
+      document.getElementById('tk-ai').textContent = last[6] ?? '—';
+      document.getElementById('tk-ai-note').textContent = tot ? Math.round((last[6] || 0) * 100 / tot) + '% всех созданных' : '';
+      document.getElementById('tk-tel').textContent = last[1] ?? '—';
+    } else {
+      document.getElementById('tk-hum-note').textContent = 'срез за сегодня появится в течение получаса';
+    }
     const days = rows.slice(-14);
     const dl = d => d.slice(8, 10) + '.' + d.slice(5, 7);
     const labels = days.map(r => dl(String(r[0])));
