@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Цели и вехи 2026 · Factum Group Tracking</title>
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
+<style>
+  :root {
+    color-scheme: light;
+    --page:           #f9f9f7;
+    --surface-1:      #fcfcfb;
+    --text-primary:   #0b0b0b;
+    --text-secondary: #52514e;
+    --text-muted:     #898781;
+    --border:         rgba(11,11,11,0.10);
+    --grid:           #e1e0d9;
+    --series-1:       #2a78d6;
+    --status-good:    #0ca30c;
+    --status-warn:    #fab219;
+    --status-plan:    #c3c2b7;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:where(:not([data-theme="light"])) {
+      color-scheme: dark;
+      --page:           #0d0d0d;
+      --surface-1:      #1a1a19;
+      --text-primary:   #ffffff;
+      --text-secondary: #c3c2b7;
+      --text-muted:     #898781;
+      --border:         rgba(255,255,255,0.10);
+      --grid:           #2c2c2a;
+      --series-1:       #3987e5;
+      --status-plan:    #4a4a46;
+    }
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --page:           #0d0d0d;
+    --surface-1:      #1a1a19;
+    --text-primary:   #ffffff;
+    --text-secondary: #c3c2b7;
+    --text-muted:     #898781;
+    --border:         rgba(255,255,255,0.10);
+    --grid:           #2c2c2a;
+    --series-1:       #3987e5;
+    --status-plan:    #4a4a46;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+    background: var(--page);
+    color: var(--text-primary);
+    min-height: 100vh;
+    padding: 24px 24px 32px;
+  }
+  .wrap { max-width: 1400px; margin: 0 auto; }
+  a { color: var(--series-1); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  header { margin-bottom: 16px; display: flex; align-items: flex-end; justify-content: space-between; gap: 24px; flex-wrap: wrap; }
+  .kicker { font-size: 13px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 6px; }
+  .kicker a { color: var(--text-muted); }
+  h1 { font-size: 24px; font-weight: 700; letter-spacing: -0.01em; }
+  .sub { margin-top: 6px; font-size: 13px; color: var(--text-secondary); }
+
+  .legend { display: flex; gap: 8px; flex-wrap: wrap; }
+  .chip {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 12px; line-height: 1.35; padding: 4px 9px;
+    border-radius: 8px; border: 1px solid var(--border); background: var(--surface-1);
+    color: var(--text-primary);
+  }
+  .chip .d { width: 7px; height: 7px; border-radius: 50%; flex: none; }
+  .d.done { background: var(--status-good); }
+  .d.progress { background: var(--status-warn); }
+  .d.plan { background: var(--status-plan); }
+
+  .card { background: var(--surface-1); border: 1px solid var(--border); border-radius: 14px; overflow: hidden; }
+  .tbl { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; table-layout: fixed; min-width: 960px; }
+  col.c-dept { width: 170px; }
+  col.c-goal { width: 280px; }
+  th {
+    text-align: left; font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase;
+    color: var(--text-muted); padding: 10px 12px; border-bottom: 1px solid var(--border);
+  }
+  th.cur { color: var(--series-1); }
+  td { padding: 12px; border-bottom: 1px solid var(--border); font-size: 13px; line-height: 1.4; vertical-align: top; }
+  tr:last-child td { border-bottom: 0; }
+  td.dept { font-size: 14px; font-weight: 650; }
+  td.goal { color: var(--text-secondary); }
+  td.goal .empty { color: var(--text-muted); }
+  .cur { background: color-mix(in srgb, var(--series-1) 6%, transparent); }
+  .cell { display: flex; flex-direction: column; gap: 6px; align-items: flex-start; }
+  .item { cursor: default; }
+  .item.has-link { cursor: pointer; }
+  .item.has-link:hover { border-color: color-mix(in srgb, var(--series-1) 40%, var(--surface-1)); }
+  .none { color: var(--text-muted); font-size: 12px; }
+
+  .foot { margin-top: 10px; font-size: 12px; color: var(--text-muted); }
+  .err { padding: 24px; color: var(--text-secondary); font-size: 13px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <div class="kicker"><a href="index.html">Factum Group Tracking</a> · Цели и вехи</div>
+      <h1>Цели 2026 и вехи по департаментам</h1>
+      <div class="sub" id="sub">Загрузка…</div>
+    </div>
+    <div class="legend">
+      <span class="chip"><span class="d done"></span>сделано</span>
+      <span class="chip"><span class="d progress"></span>в работе</span>
+      <span class="chip"><span class="d plan"></span>план</span>
+    </div>
+  </header>
+
+  <div class="card"><div class="tbl" id="tbl"></div></div>
+  <div class="foot">Прошедшие и текущий месяц — основные вехи; будущие — задачи к реализации. Запись со ссылкой открывает задачу в Битрикс24.</div>
+</div>
+
+<script>
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+function render(data) {
+  const cur = data.current;
+  const months = data.months;
+  const curLabel = months.find(m => m.id === cur)?.label || '';
+  document.getElementById('sub').textContent =
+    `${curLabel} — текущий месяц · обновлено ${data.updated}`;
+
+  const head = `<colgroup><col class="c-dept"><col class="c-goal">${months.map(() => '<col>').join('')}</colgroup>
+    <thead><tr><th>Департамент</th><th>Цель 2026</th>${months.map(m =>
+      `<th class="${m.id === cur ? 'cur' : ''}">${esc(m.label)}${m.id === cur ? ' · идёт' : ''}</th>`).join('')}</tr></thead>`;
+
+  const rows = data.departments.map(d => {
+    const cells = months.map(m => {
+      const items = (d.items || []).filter(i => i.month === m.id);
+      const isCur = m.id === cur;
+      const past = m.id <= cur;
+      const inner = items.length
+        ? `<div class="cell">${items.map(i => {
+            const link = i.link ? ` data-link="${esc(i.link)}"` : '';
+            return `<span class="chip item${i.link ? ' has-link' : ''}"${link} title="${i.link ? 'Открыть задачу в Битрикс24' : ''}"><span class="d ${esc(i.status || 'plan')}"></span>${esc(i.text)}</span>`;
+          }).join('')}</div>`
+        : `<span class="none">${past ? '— нет вех' : '— задачи не поставлены'}</span>`;
+      return `<td class="${isCur ? 'cur' : ''}">${inner}</td>`;
+    }).join('');
+    const goal = d.goal ? esc(d.goal) : '<span class="empty">цель не задана</span>';
+    return `<tr><td class="dept">${esc(d.name)}</td><td class="goal">${goal}</td>${cells}</tr>`;
+  }).join('');
+
+  document.getElementById('tbl').innerHTML = `<table>${head}<tbody>${rows}</tbody></table>`;
+  document.querySelectorAll('.item.has-link').forEach(el =>
+    el.addEventListener('click', () => window.open(el.dataset.link, '_blank', 'noopener')));
+}
+
+fetch('goals.json', { cache: 'no-store' })
+  .then(r => { if (!r.ok) throw new Error(r.status); return r.json(); })
+  .then(render)
+  .catch(() => {
+    document.getElementById('sub').textContent = 'Данные не загрузились';
+    document.getElementById('tbl').innerHTML = '<div class="err">Не удалось прочитать goals.json. Обновите страницу.</div>';
+  });
+</script>
+</body>
+</html>
