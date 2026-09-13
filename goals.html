@@ -90,6 +90,10 @@
   td { padding: 12px; border-bottom: 1px solid var(--border); font-size: 13px; line-height: 1.4; vertical-align: top; }
   tr:last-child td { border-bottom: 0; }
   td.dept { font-size: 14px; font-weight: 650; }
+  td.dept .grp { font-size: 11px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--series-1); margin-bottom: 2px; }
+  td.dept .note { font-size: 12px; font-weight: 400; color: var(--text-muted); margin-top: 3px; }
+  tr.in-group td { border-bottom-color: color-mix(in srgb, var(--border) 50%, transparent); }
+  tr.in-group + tr:not(.in-group) td, tr:not(.in-group) + tr.in-group td { border-top: 1px solid var(--border); }
   td.goal { color: var(--text-secondary); }
   td.goal .empty { color: var(--text-muted); }
   .cur { background: color-mix(in srgb, var(--series-1) 6%, transparent); }
@@ -150,7 +154,9 @@ function render(data) {
       return `<td class="${isCur ? 'cur' : ''}">${inner}</td>`;
     }).join('');
     const goal = d.goal ? esc(d.goal) : '<span class="empty">цель не задана</span>';
-    return `<tr><td class="dept">${esc(d.name)}</td><td class="goal">${goal}</td>${cells}</tr>`;
+    const note = d.note ? `<div class="note">${esc(d.note)}</div>` : '';
+    const grp = d.group ? `<div class="grp">${esc(d.group)}</div>` : '';
+    return `<tr class="${d.group ? 'in-group' : ''}"><td class="dept">${grp}${esc(d.name)}${note}</td><td class="goal">${goal}</td>${cells}</tr>`;
   }).join('');
 
   document.getElementById('tbl').innerHTML = `<table>${head}<tbody>${rows}</tbody></table>`;
