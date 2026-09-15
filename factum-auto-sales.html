@@ -131,13 +131,13 @@
     <div class="note">«＋» у страны раскрывает её отделы. Новые отделы подтягиваются из таблицы автоматически. Покупки в этой разбивке — из «Аналитики продаж месячной» (могут отставать от «Общего зачета» на день-два).</div>
   </section>
 
-  <h2>Тёплые лиды · amoCRM</h2>
+  <h2>Тёплые лиды</h2>
   <section class="card">
     <div class="metrics">
       <div class="metric">
         <div class="metric-label">Тёплых сейчас</div>
         <div class="metric-value" id="wm-now">—</div>
-        <div class="metric-note">6 воронок (Украина, Молдова, Poland, Казахстан, Грузия, Армения) · этапы «готов в ближ. месяц» → «выслан договор» · лид, ушедший в депозит или закрытый, автоматически выбывает из «тёплых сейчас»</div>
+        <div class="metric-note" id="wm-now-note">Украина, Казахстан, Грузия — amoCRM («готов в ближ. месяц» → «выслан договор») · Молдова, Польша, Армения — Битрикс24 (стадии «MQL — тёплый» и «SQL — горячий»)</div>
       </div>
       <div class="metric">
         <div class="metric-label" id="wm-new-l">Новых тёплых</div>
@@ -169,6 +169,7 @@
     </div>
     <div class="chart-title" id="wm-chart-title">По дням: новые тёплые, переходы в депозит и в закрыто (история копится с 20.08.2026)</div>
     <div class="chart" id="wm-chart"></div>
+    <div class="note">Метрики исходов (новые тёплые, → депозит, → закрыто, → в холод) и графики считаются по событиям amoCRM — для Молдовы, Польши и Армении, перешедших в Битрикс24, они больше не пополняются.</div>
   </section>
 
   <h2>Задачи · amoCRM</h2>
@@ -497,15 +498,8 @@ window.__gvW = t => {
     if (!rows.length) return;
     rows.sort((a, b) => a[0] < b[0] ? -1 : 1);
     const last = rows[rows.length - 1];
-    // разбивка «тёплых сейчас» по странам (воронкам amoCRM)
-    const CN = ['Украина', 'Молдова', 'Poland', 'Казахстан', 'Грузия', 'Армения'];
-    const cv = last.slice(5, 11);
-    if (cv.some(v => typeof v === 'number')) {
-      document.getElementById('wm-byc-title').hidden = false;
-      document.getElementById('wm-byc').innerHTML = CN.map((n, i) =>
-        `<div class="mini"><div class="mini-label">${n}</div><div class="mini-value">${cv[i] ?? '—'}</div></div>`).join('');
-    }
-    document.getElementById('wm-now').textContent = last[1] ?? '—';
+    window.WLAST = last;
+    renderWarmNow();
     window.WROWS = rows;
     // вкладки календарных месяцев для метрик
     const yms = [...new Set(rows.map(r => String(r[0]).slice(0, 7)))].sort().slice(-6);
@@ -515,6 +509,38 @@ window.__gvW = t => {
     tabs.hidden = yms.length < 2;
     renderWarmMetrics(yms[yms.length - 1]);
     renderWarm(window.WMODE || 'd');
+  } catch (e) { console.log(e); }
+};
+function renderWarmNow() {
+  const last = window.WLAST; if (!last) return;
+  const bx = window.BX13 || null;
+  // amo-порядок: UA, MD, PL, KZ, GE, AM
+  const cv = last.slice(5, 11);
+  const names = ['Украина', 'Молдова', 'Польша', 'Казахстан', 'Грузия', 'Армения'];
+  const vals = cv.slice();
+  const b24i = [1, 2, 5]; // MD, PL, AM
+  if (bx) { vals[1] = bx.md; vals[2] = bx.pl; vals[5] = bx.am; }
+  if (vals.some(v => typeof v === 'number')) {
+    document.getElementById('wm-byc-title').hidden = false;
+    document.getElementById('wm-byc').innerHTML = names.map((n, i) =>
+      `<div class="mini"><div class="mini-label">${n}${bx && b24i.includes(i) ? ' · Б24' : ''}</div><div class="mini-value">${vals[i] ?? '—'}</div></div>`).join('');
+  }
+  let total = last[1];
+  if (bx && typeof total === 'number') {
+    total = total - (num2(cv[1]) + num2(cv[2]) + num2(cv[5])) + bx.md + bx.pl + bx.am;
+  }
+  document.getElementById('wm-now').textContent = total ?? '—';
+}
+function num2(v) { return typeof v === 'number' ? v : 0; }
+window.__gvB = t => {
+  try {
+    const rows = gvRows(t).map(r => [dstr(r[0]), num(r[1]), num(r[2]), num(r[3])])
+      .filter(r => /^\d{4}-\d{2}-\d{2}$/.test(r[0]));
+    if (!rows.length) return;
+    rows.sort((a, b) => a[0] < b[0] ? -1 : 1);
+    const L = rows[rows.length - 1];
+    window.BX13 = { date: L[0], md: num2(L[1]), pl: num2(L[2]), am: num2(L[3]) };
+    renderWarmNow();
   } catch (e) { console.log(e); }
 };
 function renderWarmMetrics(ym) {
@@ -840,6 +866,7 @@ gvLoad('Лист1', '__gvHead', 'A1:S1');
 gvLoad('Лист3', '__gvS', 'A1:M10');
 gvLoad('Лист4', '__gvP', 'A1:D400');
 gvLoad('Лист5', '__gvW', 'A1:L400');
+gvLoad('Лист13', '__gvB', 'A1:F400');
 gvLoad('Лист8', '__gvH8', 'A1:C400');
 gvLoad('Лист10', '__gvT', 'A1:E400');
 gvLoad('Лист11', '__gvC', 'A1:D3000');
