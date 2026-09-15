@@ -137,7 +137,7 @@
       <div class="metric">
         <div class="metric-label">Тёплых сейчас</div>
         <div class="metric-value" id="wm-now">—</div>
-        <div class="metric-note" id="wm-now-note">Украина, Казахстан, Грузия — amoCRM («готов в ближ. месяц» → «выслан договор») · Молдова, Польша, Армения — Битрикс24 (стадии «MQL — тёплый» и «SQL — горячий»)</div>
+        <div class="metric-note" id="wm-now-note">Украина, Молдова, Казахстан, Грузия — amoCRM («готов в ближ. месяц» → «выслан договор») · Польша и Армения — Битрикс24 (стадии «MQL — тёплый» и «SQL — горячий»)</div>
       </div>
       <div class="metric">
         <div class="metric-label" id="wm-new-l">Новых тёплых</div>
@@ -169,7 +169,7 @@
     </div>
     <div class="chart-title" id="wm-chart-title">По дням: новые тёплые, переходы в депозит и в закрыто (история копится с 20.08.2026)</div>
     <div class="chart" id="wm-chart"></div>
-    <div class="note">Метрики исходов (новые тёплые, → депозит, → закрыто, → в холод) и графики считаются по событиям amoCRM — для Молдовы, Польши и Армении, перешедших в Битрикс24, они больше не пополняются.</div>
+    <div class="note">Метрики исходов (новые тёплые, → депозит, → закрыто, → в холод) и графики считаются по событиям amoCRM — для Польши и Армении, перешедших в Битрикс24, они больше не пополняются.</div>
   </section>
 
   <h2>Задачи · amoCRM</h2>
@@ -518,8 +518,8 @@ function renderWarmNow() {
   const cv = last.slice(5, 11);
   const names = ['Украина', 'Молдова', 'Польша', 'Казахстан', 'Грузия', 'Армения'];
   const vals = cv.slice();
-  const b24i = [1, 2, 5]; // MD, PL, AM
-  if (bx) { vals[1] = bx.md; vals[2] = bx.pl; vals[5] = bx.am; }
+  const b24i = [2, 5]; // PL, AM
+  if (bx) { vals[2] = bx.pl; vals[5] = bx.am; }
   if (vals.some(v => typeof v === 'number')) {
     document.getElementById('wm-byc-title').hidden = false;
     document.getElementById('wm-byc').innerHTML = names.map((n, i) =>
@@ -527,7 +527,7 @@ function renderWarmNow() {
   }
   let total = last[1];
   if (bx && typeof total === 'number') {
-    total = total - (num2(cv[1]) + num2(cv[2]) + num2(cv[5])) + bx.md + bx.pl + bx.am;
+    total = total - (num2(cv[2]) + num2(cv[5])) + bx.pl + bx.am;
   }
   document.getElementById('wm-now').textContent = total ?? '—';
 }
