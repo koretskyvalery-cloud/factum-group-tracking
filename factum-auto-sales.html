@@ -74,6 +74,15 @@
   .dep td { padding: 6px 8px; border-bottom: 1px solid var(--grid); }
   .dep tr:last-child td { border-bottom: none; }
   .dep tr.grp td { font-weight: 650; background: color-mix(in srgb, var(--series-1) 7%, var(--surface-1)); }
+  .dep tr.country td { cursor: pointer; }
+  .dep tr.country td:first-child::before { content: "＋ "; color: var(--series-1); font-weight: 700; }
+  .dep tr.country.open td:first-child::before { content: "－ "; }
+  .dep tr.country.noexp td:first-child::before { content: ""; }
+  .dep tr.country.noexp td { cursor: default; }
+  .dep tr.deptrow { display: none; }
+  .dep tr.deptrow.show { display: table-row; }
+  .dep tr.deptrow td:first-child { padding-left: 30px; color: var(--text-secondary); }
+  .dep tr.total td { font-weight: 750; border-top: 2px solid var(--baseline); }
 </style>
 </head>
 <body>
@@ -93,10 +102,22 @@
         <div class="metric-value" id="sd-buy">—</div>
       </div>
       <div class="metric">
-        <div class="metric-label">Активных менеджеров</div>
+        <div class="metric-label">Менеджеров работает</div>
         <div class="metric-value" id="sd-mgr">—</div>
+        <div class="metric-note">сдали экзамен, 30+ дней, без стажёров · HR-данные Битрикс24, ежедневно</div>
       </div>
     </div>
+  </section>
+
+  <section class="card">
+    <div class="tabs" id="pace-tabs">
+      <button class="on" data-k="2">Чистые депозиты</button>
+      <button data-k="1">Депозиты всего</button>
+      <button data-k="3">Покупки</button>
+    </div>
+    <div class="chart-title" id="pace-title">Темп месяца: накопительно с 1-го числа, день в день</div>
+    <div class="chart" id="pace-chart"><span class="muted" style="font-size:13px">Загрузка…</span></div>
+    <div class="note" id="pace-note">Сопоставление темпов: сколько было на этот же день месяца в прошлые месяцы. История дневных снимков ведётся с 04.08.2026.</div>
   </section>
 
   <section class="card">
@@ -107,7 +128,7 @@
   <h2 id="dept-h" hidden>По отделам · текущий месяц</h2>
   <section class="card" id="dept-card" hidden>
     <div id="dept-table"></div>
-    <div class="note">Страны — строки «Итого»; ниже — офисы. Покупки в этой разбивке — из «Аналитики продаж месячной» (могут отставать от «Общего зачета» на день-два).</div>
+    <div class="note">«＋» у страны раскрывает её отделы. Новые отделы подтягиваются из таблицы автоматически. Покупки в этой разбивке — из «Аналитики продаж месячной» (могут отставать от «Общего зачета» на день-два).</div>
   </section>
 
   <h2>Тёплые лиды · amoCRM</h2>
@@ -119,25 +140,26 @@
         <div class="metric-note">6 воронок (Украина, Молдова, Poland, Казахстан, Грузия, Армения) · этапы «готов в ближ. месяц» → «выслан договор» · лид, ушедший в депозит или закрытый, автоматически выбывает из «тёплых сейчас»</div>
       </div>
       <div class="metric">
-        <div class="metric-label">Новых тёплых за месяц</div>
+        <div class="metric-label" id="wm-new-l">Новых тёплых</div>
         <div class="metric-value" id="wm-new">—</div>
       </div>
       <div class="metric">
-        <div class="metric-label">Из тёплых → депозит</div>
+        <div class="metric-label" id="wm-dep-l">Из тёплых → депозит</div>
         <div class="metric-value" id="wm-dep">—</div>
         <div class="metric-note" id="wm-dep-pct"></div>
       </div>
       <div class="metric">
-        <div class="metric-label">Из тёплых → закрыто</div>
+        <div class="metric-label" id="wm-cl-l">Из тёплых → закрыто</div>
         <div class="metric-value" id="wm-cl">—</div>
         <div class="metric-note" id="wm-cl-pct"></div>
       </div>
       <div class="metric">
-        <div class="metric-label">Из тёплых → в холод</div>
+        <div class="metric-label" id="wm-cold-l">Из тёплых → в холод</div>
         <div class="metric-value" id="wm-cold">—</div>
         <div class="metric-note" id="wm-cold-pct">вернулись на более ранний этап · учёт с 03.09</div>
       </div>
     </div>
+    <div class="tabs" id="wmm-tabs" hidden></div>
     <div class="chart-title" id="wm-byc-title" hidden>Тёплые по странам · сейчас</div>
     <div class="dept-mini" id="wm-byc"></div>
     <div class="tabs" id="wm-tabs">
@@ -173,15 +195,24 @@
         <div class="metric-note">открытые задачи с истёкшим сроком</div>
       </div>
     </div>
-    <div class="chart-title">Задачи менеджеров по дням · создано и их текущая судьба</div>
-    <div class="chart" id="tkh-chart"><span class="muted" style="font-size:13px">Учёт с 10.09 — данные появятся после ближайшего пересчёта…</span></div>
-    <div class="chart-title" style="margin-top:16px">Задачи ИИ-системы по дням · создано и их текущая судьба</div>
-    <div class="chart" id="tka-chart"><span class="muted" style="font-size:13px">Учёт с 10.09 — данные появятся после ближайшего пересчёта…</span></div>
-    <div class="chart-title" style="margin-top:16px">Телефония (авто) по дням · только количество, судьба не отслеживается</div>
-    <div class="chart" id="tkt-chart"><span class="muted" style="font-size:13px">Учёт с 10.09…</span></div>
+    <div class="tabs" id="tk-tabs">
+      <button class="on" data-p="d">Дни</button>
+      <button data-p="w">Недели</button>
+      <button data-p="m">Месяцы</button>
+      <button data-p="q">90 дней</button>
+    </div>
+    <div class="chart-title" id="tkh-title">Задачи менеджеров · создано и их текущая судьба</div>
+    <div class="chart" id="tkh-chart"><span class="muted" style="font-size:13px">Загрузка…</span></div>
+    <div class="chart-title" id="tka-title" style="margin-top:16px">Задачи ИИ-системы · создано и их текущая судьба</div>
+    <div class="chart" id="tka-chart"><span class="muted" style="font-size:13px">Загрузка…</span></div>
     <div class="chart-title" style="margin-top:18px">Кто из менеджеров создаёт задачи · <span id="tkc-day">—</span></div>
+    <div class="tabs" id="tkc-tabs">
+      <button class="on" data-p="d">День</button>
+      <button data-p="w">7 дней</button>
+      <button data-p="m">Месяц</button>
+    </div>
     <div id="tkc-top"><span class="muted" style="font-size:13px">Разбивка по создателям появится в течение дня.</span></div>
-    <div class="note">«Выполнено / перенесено / удалено» — текущее состояние задач, созданных в этот день (пересчёт 2 раза в час). Телефония — автозадачи «Вами был совершен/принят звонок…», их судьба не учитывается. Деление по отделам — следующий шаг.</div>
+    <div class="note">«Выполнено / перенесено / удалено» — текущее состояние задач, созданных в период (пересчёт 2 раза в час). Автозадачи телефонии в графики не входят — их количество за сегодня показано цифрой выше. История судьбы задач — с 03.09, по создателям — с 10.09: недели и месяцы наполняются по мере накопления.</div>
   </section>
 
   <h2>Аналитика продаж в ретроспективе</h2>
@@ -197,7 +228,14 @@ const esc = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;');
 const SHEET_ID = '10sbvUaWDkrJJqIC7ciuSsci21GuRMUV5P2TBhZCTF8U';
 const MONTH_NUM = {'Январь':1,'Февраль':2,'Март':3,'Апрель':4,'Май':5,'Июнь':6,'Июль':7,'Август':8,'Сентябрь':9,'Октябрь':10,'Ноябрь':11,'Декабрь':12};
 const MONTH_ABBR = ['Янв','Фев','Мар','Апр','Май','Июн','Июл','Авг','Сен','Окт','Ноя','Дек'];
+const MON_FULL = ['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
 function gvRows(t) { return (t.table.rows||[]).map(r => (r.c||[]).map(c => (c && c.v != null) ? c.v : '')); }
+function dstr(v) {
+  if (v instanceof Date) return v.getFullYear() + '-' + String(v.getMonth()+1).padStart(2,'0') + '-' + String(v.getDate()).padStart(2,'0');
+  const s = String(v).trim();
+  const m = s.match(/^Date\((\d+),(\d+),(\d+)/);
+  return m ? m[1] + '-' + String(+m[2]+1).padStart(2,'0') + '-' + String(+m[3]).padStart(2,'0') : s;
+}
 function num(v) {
   if (typeof v === 'number') return Math.round(v);
   const s = String(v).trim().replace(/\s/g,'').replace(',', '.');
@@ -288,34 +326,81 @@ function parseFacts(rows) {
 const DHEAD_FALLBACK = ['Месяц','Критерии','ВСЕГО','Итого UA','Итого MD','Итого PL','Итого GE','Итого AM',
   'Kyiv I. M.','Kyiv A. S.','Odessa J. T.','Dnipro D. M.','Dnipro D. P.','Lviv D. D.','Lviv J. S.',
   'Vinnitsa','Chişinău A.S.','Chişinău V.K.','Лидгены Укр'];
+const CNAMES = { UA: 'Украина', MD: 'Молдова', PL: 'Польша', GE: 'Грузия', AM: 'Армения', OTHER: 'Другие отделы' };
+function deptCountry(name) {
+  const n = String(name).toLowerCase();
+  if (/kyiv|kiev|odessa|dnipro|lviv|vinnitsa|vinnytsia|kharkiv|киев|одесс|днепр|днипро|льв[іио]в|винниц|вінниц|харк[іо]в/.test(n)) return 'UA';
+  if (/chi[sșş]in|kishinev|b[ăa]l[țt]i|кишин|бельц|молдов/.test(n)) return 'MD';
+  if (/warsaw|krak|wroc|pozna|gdan|lodz|варшав|краков|вроцлав|польш|polan/.test(n)) return 'PL';
+  if (/tbilisi|batumi|kutaisi|тбилис|батум|кутаис|груз/.test(n)) return 'GE';
+  if (/yerevan|gyumri|ереван|гюмри|армен/.test(n)) return 'AM';
+  return 'OTHER';
+}
 function renderDepts(F) {
-  if (!F.rows.net) return;
-  let head = F.head;
-  if (!head || !String(head[3] || '').trim()) head = DHEAD_FALLBACK;
+  if (!F || !F.rows || !F.rows.net) return;
+  let head = window.DHEAD;
+  if (!head || !String(head[3] || '').trim()) head = (F.head && String(F.head[3] || '').trim()) ? F.head : DHEAD_FALLBACK;
   const cell = (row, i) => row ? row[i] : null;
-  const items = [];
-  for (let i = 3; i < head.length; i++) {
-    const name = head[i];
+  const mk = (name, i) => ({
+    name, mgr: num(cell(F.rows.mgr, i)), net: num(cell(F.rows.net, i)),
+    buy: num(cell(F.rows.buy, i)), leads: num(cell(F.rows.leads, i)), crd: pct(cell(F.rows.crd, i)),
+  });
+  const empty = it => it.mgr == null && it.net == null && it.buy == null && it.leads == null;
+  const countries = [], deptsBy = {};
+  let totalIt = null;
+  for (let i = 2; i < head.length; i++) {
+    const name = String(head[i] || '').trim();
     if (!name || name.startsWith('Лидген') || name.startsWith('БТ')) continue;
-    const it = {
-      grp: name.startsWith('Итого'),
-      name: name.replace(/^Итого\s+/, ''),
-      mgr: num(cell(F.rows.mgr, i)), net: num(cell(F.rows.net, i)),
-      buy: num(cell(F.rows.buy, i)), leads: num(cell(F.rows.leads, i)), crd: pct(cell(F.rows.crd, i)),
-    };
-    if (it.mgr == null && it.net == null && it.buy == null && it.leads == null) continue; // пустые офисы
-    items.push(it);
+    if (name === 'ВСЕГО') { totalIt = mk('ИТОГО', i); continue; }
+    if (name.startsWith('Итого')) {
+      const code = name.replace(/^Итого\s+/, '').trim().toUpperCase();
+      const it = mk(CNAMES[code] || code, i); it.code = code;
+      if (!empty(it)) countries.push(it);
+      continue;
+    }
+    const it = mk(name, i);
+    if (empty(it)) continue;
+    const c = deptCountry(name);
+    (deptsBy[c] = deptsBy[c] || []).push(it);
   }
-  if (!items.length) return;
+  if (!countries.length && !Object.keys(deptsBy).length) return;
+  // отделы, чья страна не представлена строкой «Итого», — отдельной группой
+  for (const c of Object.keys(deptsBy)) {
+    if (!countries.some(x => x.code === c)) {
+      const agg = { code: c, name: CNAMES[c] || c, mgr: null, net: null, buy: null, leads: null, crd: null };
+      countries.push(agg);
+    }
+  }
   const fmt = v => v == null ? '—' : v;
   const fp = v => v == null ? '—' : String(v).replace('.', ',') + '%';
-  const rows = items.map(it =>
-    `<tr${it.grp ? ' class="grp"' : ''}><td>${esc(it.name)}</td><td class="num">${fmt(it.mgr)}</td><td class="num">${fmt(it.leads)}</td><td class="num">${fmt(it.net)}</td><td class="num">${fmt(it.buy)}</td><td class="num">${fp(it.crd)}</td></tr>`).join('');
+  const tdRow = (it, cls, extra) =>
+    `<tr class="${cls}"${extra || ''}><td>${esc(it.name)}</td><td class="num">${fmt(it.mgr)}</td><td class="num">${fmt(it.leads)}</td><td class="num">${fmt(it.net)}</td><td class="num">${fmt(it.buy)}</td><td class="num">${fp(it.crd)}</td></tr>`;
+  let rows = '';
+  for (const c of countries) {
+    const kids = deptsBy[c.code] || [];
+    rows += tdRow(c, 'country grp' + (kids.length ? '' : ' noexp'), ` data-cc="${c.code}"`);
+    for (const k of kids) rows += tdRow(k, 'deptrow', ` data-c="${c.code}"`);
+  }
+  if (totalIt) rows += tdRow(totalIt, 'total');
   document.getElementById('dept-table').innerHTML =
-    `<table class="dep"><thead><tr><th>Отдел</th><th class="num">Менеджеров</th><th class="num">Лиды</th><th class="num">Чистые депозиты</th><th class="num">Покупки</th><th class="num">CR в депозит</th></tr></thead><tbody>${rows}</tbody></table>`;
+    `<table class="dep"><thead><tr><th>Страна / отдел</th><th class="num">Менеджеров</th><th class="num">Лиды</th><th class="num">Чистые депозиты</th><th class="num">Покупки</th><th class="num">CR в депозит</th></tr></thead><tbody>${rows}</tbody></table>`;
   document.getElementById('dept-h').hidden = false;
   document.getElementById('dept-card').hidden = false;
 }
+document.getElementById('dept-table').addEventListener('click', e => {
+  const tr = e.target.closest('tr.country'); if (!tr || tr.classList.contains('noexp')) return;
+  const open = tr.classList.toggle('open');
+  document.querySelectorAll(`#dept-table tr.deptrow[data-c="${tr.dataset.cc}"]`).forEach(r => r.classList.toggle('show', open));
+});
+window.__gvHead = t => {
+  try {
+    const rows = gvRows(t);
+    if (rows.length && String(rows[0][0]).trim() === 'Месяц') {
+      window.DHEAD = rows[0].map(v => String(v || '').trim());
+      if (window.LF) renderDepts(window.LF);
+    }
+  } catch (e) { console.log(e); }
+};
 function series(map, cm) { const r=[]; for (let m=1;m<=cm;m++) r.push(map[m] ?? null); return r; }
 function gvLoad(sheet, handler, range) {
   const s = document.createElement('script');
@@ -383,7 +468,6 @@ function renderSalesMain() {
   const buyNow = sp && typeof sp[cm - 1] === 'number' ? sp[cm - 1] : F.buy[cm];
   if (F.net[cm] != null) document.getElementById('sd-net').textContent = F.net[cm];
   if (buyNow != null) document.getElementById('sd-buy').textContent = buyNow;
-  if (F.mgr[cm] != null) document.getElementById('sd-mgr').textContent = F.mgr[cm];
   const months = MONTH_ABBR.slice(0, cm);
   document.getElementById('sd-chart').innerHTML = groupedColumns(months, [
     { label: 'Депозиты (всего)', vals: series(F.dep, cm), color: 'var(--series-1-lt)' },
@@ -421,24 +505,40 @@ window.__gvW = t => {
       document.getElementById('wm-byc').innerHTML = CN.map((n, i) =>
         `<div class="mini"><div class="mini-label">${n}</div><div class="mini-value">${cv[i] ?? '—'}</div></div>`).join('');
     }
-    const ym = String(last[0]).slice(0, 7);
-    let neu = 0, dep = 0, cl = 0, cold = 0;
-    rows.forEach(r => { if (String(r[0]).slice(0, 7) === ym) { neu += r[2] || 0; dep += r[3] || 0; cl += r[4] || 0; cold += r[11] || 0; } });
     document.getElementById('wm-now').textContent = last[1] ?? '—';
-    document.getElementById('wm-new').textContent = '+' + neu;
-    document.getElementById('wm-dep').textContent = dep;
-    document.getElementById('wm-cl').textContent = cl;
-    document.getElementById('wm-cold').textContent = cold;
-    const out = dep + cl + cold;
-    if (out > 0) {
-      document.getElementById('wm-dep-pct').textContent = Math.round(dep / out * 100) + '% исходов';
-      document.getElementById('wm-cl-pct').textContent = Math.round(cl / out * 100) + '% исходов';
-      document.getElementById('wm-cold-pct').textContent = Math.round(cold / out * 100) + '% исходов · учёт с 03.09';
-    }
     window.WROWS = rows;
+    // вкладки календарных месяцев для метрик
+    const yms = [...new Set(rows.map(r => String(r[0]).slice(0, 7)))].sort().slice(-6);
+    const tabs = document.getElementById('wmm-tabs');
+    tabs.innerHTML = yms.map(ym =>
+      `<button data-ym="${ym}">${MON_FULL[+ym.slice(5, 7) - 1]}</button>`).join('');
+    tabs.hidden = yms.length < 2;
+    renderWarmMetrics(yms[yms.length - 1]);
     renderWarm(window.WMODE || 'd');
   } catch (e) { console.log(e); }
 };
+function renderWarmMetrics(ym) {
+  const rows = window.WROWS || []; if (!rows.length || !ym) return;
+  document.querySelectorAll('#wmm-tabs button').forEach(b => b.classList.toggle('on', b.dataset.ym === ym));
+  let neu = 0, dep = 0, cl = 0, cold = 0;
+  rows.forEach(r => { if (String(r[0]).slice(0, 7) === ym) { neu += r[2] || 0; dep += r[3] || 0; cl += r[4] || 0; cold += r[11] || 0; } });
+  const mn = MON_FULL[+ym.slice(5, 7) - 1].toLowerCase();
+  document.getElementById('wm-new-l').textContent = 'Новых тёплых · ' + mn;
+  document.getElementById('wm-dep-l').textContent = 'Из тёплых → депозит · ' + mn;
+  document.getElementById('wm-cl-l').textContent = 'Из тёплых → закрыто · ' + mn;
+  document.getElementById('wm-cold-l').textContent = 'Из тёплых → в холод · ' + mn;
+  document.getElementById('wm-new').textContent = '+' + neu;
+  document.getElementById('wm-dep').textContent = dep;
+  document.getElementById('wm-cl').textContent = cl;
+  document.getElementById('wm-cold').textContent = cold;
+  const out = dep + cl + cold;
+  document.getElementById('wm-dep-pct').textContent = out > 0 ? Math.round(dep / out * 100) + '% исходов' : '';
+  document.getElementById('wm-cl-pct').textContent = out > 0 ? Math.round(cl / out * 100) + '% исходов' : '';
+  document.getElementById('wm-cold-pct').textContent = (out > 0 ? Math.round(cold / out * 100) + '% исходов · ' : '') + 'учёт с 03.09';
+}
+document.getElementById('wmm-tabs').addEventListener('click', e => {
+  const b = e.target.closest('button'); if (b) renderWarmMetrics(b.dataset.ym);
+});
 const MON3 = ['Янв','Фев','Мар','Апр','Май','Июн','Июл','Авг','Сен','Окт','Ноя','Дек'];
 function warmGroups(rows, mode) {
   const dl = d => d.slice(8, 10) + '.' + d.slice(5, 7);
@@ -537,26 +637,56 @@ window.__gvF = t => {
     } else {
       document.getElementById('tk-hum-note').textContent = 'срез за сегодня появится в течение получаса';
     }
-    const days = rows.slice(-14);
-    const dl = d => d.slice(8, 10) + '.' + d.slice(5, 7);
-    const labels = days.map(r => dl(String(r[0])));
-    document.getElementById('tkh-chart').innerHTML = groupedColumns(labels, [
-      { label: 'Создано', vals: days.map(r => r[2]), color: 'var(--series-1)' },
-      { label: 'Выполнено', vals: days.map(r => r[3]), color: 'var(--series-3)' },
-      { label: 'Перенесено', vals: days.map(r => r[4]), color: 'var(--series-2)' },
-      { label: 'Удалено', vals: days.map(r => r[5]), color: 'var(--bad)' },
-    ]);
-    document.getElementById('tka-chart').innerHTML = groupedColumns(labels, [
-      { label: 'Создано', vals: days.map(r => r[6]), color: 'var(--series-1)' },
-      { label: 'Выполнено', vals: days.map(r => r[7]), color: 'var(--series-3)' },
-      { label: 'Перенесено', vals: days.map(r => r[8]), color: 'var(--series-2)' },
-      { label: 'Удалено', vals: days.map(r => r[9]), color: 'var(--bad)' },
-    ]);
-    document.getElementById('tkt-chart').innerHTML = groupedColumns(labels, [
-      { label: 'Автозадачи звонков', vals: days.map(r => r[1]), color: 'var(--text-muted)' },
-    ]);
+    window.TKROWS = rows;
+    renderTasks(window.TKMODE || 'd');
   } catch (e) { console.log(e); }
 };
+function tkGroups(rows, mode) {
+  const dl = d => d.slice(8, 10) + '.' + d.slice(5, 7);
+  const sum9 = (o, r) => { for (let i = 1; i <= 9; i++) o.v[i] = (o.v[i] || 0) + (r[i] || 0); };
+  if (mode === 'd') return rows.slice(-14).map(r => { const o = { label: dl(r[0]), v: [] }; sum9(o, r); return o; });
+  let src = rows, take = 12;
+  if (mode === 'q') {
+    const cut = new Date(Date.now() - 90 * 86400000).toISOString().slice(0, 10);
+    src = rows.filter(r => r[0] >= cut); take = 14;
+  }
+  const g = new Map();
+  for (const r of src) {
+    let key, label;
+    if (mode === 'm') {
+      key = r[0].slice(0, 7); label = MON3[+r[0].slice(5, 7) - 1];
+    } else {
+      const d = new Date(r[0] + 'T12:00:00');
+      const mon = new Date(d); mon.setDate(d.getDate() - ((d.getDay() + 6) % 7));
+      const sun = new Date(mon); sun.setDate(mon.getDate() + 6);
+      const f = x => String(x.getDate()).padStart(2, '0') + '.' + String(x.getMonth() + 1).padStart(2, '0');
+      key = mon.toISOString().slice(0, 10); label = f(mon) + '–' + f(sun);
+    }
+    if (!g.has(key)) g.set(key, { label, v: [] });
+    sum9(g.get(key), r);
+  }
+  return [...g.keys()].sort().map(k => g.get(k)).slice(-take);
+}
+function renderTasks(mode) {
+  window.TKMODE = mode;
+  const rows = window.TKROWS || []; if (!rows.length) return;
+  document.querySelectorAll('#tk-tabs button').forEach(b => b.classList.toggle('on', b.dataset.p === mode));
+  const suf = { d: 'по дням (14)', w: 'по неделям', m: 'по месяцам', q: 'последние 90 дней · по неделям' }[mode];
+  document.getElementById('tkh-title').textContent = 'Задачи менеджеров · ' + suf + ' · создано и их текущая судьба';
+  document.getElementById('tka-title').textContent = 'Задачи ИИ-системы · ' + suf;
+  const gs = tkGroups(rows, mode);
+  const labels = gs.map(o => o.label);
+  const S = (i, lbl, col) => ({ label: lbl, vals: gs.map(o => o.v[i] ?? null), color: col });
+  document.getElementById('tkh-chart').innerHTML = groupedColumns(labels, [
+    S(2, 'Создано', 'var(--series-1)'), S(3, 'Выполнено', 'var(--series-3)'),
+    S(4, 'Перенесено', 'var(--series-2)'), S(5, 'Удалено', 'var(--bad)')]);
+  document.getElementById('tka-chart').innerHTML = groupedColumns(labels, [
+    S(6, 'Создано', 'var(--series-1)'), S(7, 'Выполнено', 'var(--series-3)'),
+    S(8, 'Перенесено', 'var(--series-2)'), S(9, 'Удалено', 'var(--bad)')]);
+}
+document.getElementById('tk-tabs').addEventListener('click', e => {
+  const b = e.target.closest('button'); if (b) renderTasks(b.dataset.p);
+});
 window.__gvCRows = null;
 window.__gvC = t => {
   try {
@@ -570,26 +700,51 @@ window.__gvC = t => {
         if (dm) d = dm[1] + '-' + String(+dm[2] + 1).padStart(2, '0') + '-' + String(+dm[3]).padStart(2, '0');
       }
       return { d, id: num(r[1]), name: String(r[2] || ''), c: num(r[3]) };
-    }).filter(r => /^\d{4}-\d{2}-\d{2}$/.test(r.d) && r.c > 0);
+    }).filter(r => /^\d{4}-\d{2}-\d{2}$/.test(r.d) && r.c > 0 && r.id !== 0);
     if (!rows.length) return;
-    const lastDay = rows.map(r => r.d).sort().pop();
-    window.__gvCRows = rows.filter(r => r.d === lastDay && r.id !== 0);
-    document.getElementById('tkc-day').textContent = lastDay.slice(8, 10) + '.' + lastDay.slice(5, 7) + '.' + lastDay.slice(0, 4);
-    renderCreators();
+    window.CROWS = rows;
+    renderCreators(window.CMODE || 'd');
   } catch (e) { console.log(e); }
 };
-function renderCreators() {
-  const rows = window.__gvCRows; if (!rows || !rows.length) return;
-  const hum = rows.reduce((s, r) => s + r.c, 0);
-  const list = rows.slice().sort((a, b) => b.c - a.c);
+function renderCreators(mode) {
+  window.CMODE = mode;
+  const all = window.CROWS; if (!all || !all.length) return;
+  document.querySelectorAll('#tkc-tabs button').forEach(b => b.classList.toggle('on', b.dataset.p === mode));
+  const lastDay = all.map(r => r.d).sort().pop();
+  const dl = d => d.slice(8, 10) + '.' + d.slice(5, 7);
+  let rows, lbl;
+  if (mode === 'd') {
+    rows = all.filter(r => r.d === lastDay);
+    lbl = dl(lastDay) + '.' + lastDay.slice(0, 4);
+  } else if (mode === 'w') {
+    const from = new Date(new Date(lastDay + 'T12:00:00') - 6 * 86400000).toISOString().slice(0, 10);
+    rows = all.filter(r => r.d >= from && r.d <= lastDay);
+    lbl = dl(from) + '–' + dl(lastDay);
+  } else {
+    const ym = lastDay.slice(0, 7);
+    rows = all.filter(r => r.d.slice(0, 7) === ym);
+    lbl = MON_FULL[+ym.slice(5, 7) - 1].toLowerCase() + ' (с 10.09)';
+  }
+  document.getElementById('tkc-day').textContent = lbl;
+  const by = new Map();
+  for (const r of rows) {
+    if (!by.has(r.id)) by.set(r.id, { name: r.name, c: 0 });
+    const o = by.get(r.id); o.c += r.c; o.name = r.name;
+  }
+  const list = [...by.values()].sort((a, b) => b.c - a.c);
+  if (!list.length) return;
+  const hum = list.reduce((s, r) => s + r.c, 0);
   const top = list.slice(0, 15);
-  const max = top.length ? top[0].c : 1;
+  const max = top[0].c || 1;
   document.getElementById('tkc-top').innerHTML = '<table style="width:100%;border-collapse:collapse;font-size:13px">' + top.map(r =>
     '<tr><td style="padding:3px 8px 3px 0;white-space:nowrap">' + esc(r.name) + '</td>' +
     '<td style="width:45%;padding:3px 0"><div style="height:10px;border-radius:5px;background:var(--series-1);width:' + Math.max(2, Math.round(r.c * 100 / max)) + '%"></div></td>' +
     '<td style="padding:3px 0 3px 10px;text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums">' + r.c + ' <span class="muted">· ' + Math.round(r.c * 100 / (hum || 1)) + '%</span></td></tr>'
   ).join('') + '</table>' + (list.length > 15 ? '<div class="muted" style="font-size:12px;margin-top:4px">Показан топ-15 из ' + list.length + ' · всего у менеджеров ' + hum + ' задач</div>' : '');
 }
+document.getElementById('tkc-tabs').addEventListener('click', e => {
+  const b = e.target.closest('button'); if (b) renderCreators(b.dataset.p);
+});
 const _gvS0 = window.__gvS;
 window.__gvS = t => {
   try {
@@ -600,10 +755,92 @@ window.__gvS = t => {
   } catch (e) { console.log(e); }
   _gvS0(t);
 };
+// «Менеджеров работает» — из истории HR (Лист8: Дата | 30+ дней | всего)
+window.__gvH8 = t => {
+  try {
+    const rows = gvRows(t).map(r => [dstr(r[0]), num(r[1]), num(r[2])])
+      .filter(r => /^\d{4}-\d{2}-\d{2}$/.test(r[0]));
+    if (!rows.length) return;
+    rows.sort((a, b) => a[0] < b[0] ? -1 : 1);
+    const last = rows[rows.length - 1];
+    if (last[1] != null) document.getElementById('sd-mgr').textContent = last[1];
+  } catch (e) { console.log(e); }
+};
+// «Темп месяца» — накопительные линии по дням месяца (Лист4: Дата | Депозиты | Чистые | Покупки)
+function lineChart(seriesArr, markDay) {
+  const W = 900, H = 235, padL = 26, padR = 60, padT = 20, padB = 22;
+  const plotW = W - padL - padR, plotH = H - padT - padB, baseY = padT + plotH;
+  const xd = d => padL + (d - 1) / 30 * plotW;
+  const maxV = Math.max(1, ...seriesArr.flatMap(s => s.pts.map(p => p.v)));
+  const yv = v => baseY - v / maxV * plotH;
+  let out = `<line x1="${padL}" y1="${baseY}" x2="${W - padR + 20}" y2="${baseY}" stroke="var(--baseline)"/>`;
+  for (const d of [1, 5, 10, 15, 20, 25, 31])
+    out += `<text x="${xd(d)}" y="${baseY + 15}" text-anchor="middle" font-size="11" fill="var(--text-muted)">${d}</text>`;
+  if (markDay) out += `<line x1="${xd(markDay)}" y1="${padT - 4}" x2="${xd(markDay)}" y2="${baseY}" stroke="var(--series-2)" stroke-dasharray="4 4" stroke-width="1"/>`;
+  for (const s of seriesArr) {
+    if (!s.pts.length) continue;
+    const ptstr = s.pts.map(p => xd(p.day).toFixed(1) + ',' + yv(p.v).toFixed(1)).join(' ');
+    out += `<polyline fill="none" stroke="${s.color}" stroke-width="${s.width}" stroke-linejoin="round" points="${ptstr}"/>`;
+    const lp = s.pts[s.pts.length - 1];
+    out += `<circle cx="${xd(lp.day)}" cy="${yv(lp.v)}" r="${s.width > 3 ? 4.5 : 3}" fill="${s.color}"/>`;
+    out += `<text x="${xd(lp.day) + 8}" y="${yv(lp.v) + 4}" font-size="12" font-weight="650" fill="${s.color}">${lp.v}</text>`;
+  }
+  const legend = seriesArr.map(s =>
+    `<span style="display:inline-flex;align-items:center;gap:6px;margin-right:16px;font-size:12px;color:var(--text-secondary)"><span style="width:10px;height:10px;border-radius:3px;background:${s.color}"></span>${esc(s.label)}</span>`).join('');
+  return `<div style="margin-bottom:6px">${legend}</div><svg viewBox="0 0 ${W} ${H}" role="img">${out}</svg>`;
+}
+const PACE_NAMES = { 1: 'Депозиты (всего)', 2: 'Чистые депозиты', 3: 'Покупки' };
+window.__gvP = t => {
+  try {
+    const rows = gvRows(t).map(r => [dstr(r[0]), num(r[1]), num(r[2]), num(r[3])])
+      .filter(r => /^\d{4}-\d{2}-\d{2}$/.test(r[0]));
+    if (!rows.length) return;
+    rows.sort((a, b) => a[0] < b[0] ? -1 : 1);
+    window.PROWS = rows;
+    renderPace(window.PMODE || 2);
+  } catch (e) { console.log(e); }
+};
+function renderPace(k) {
+  window.PMODE = k;
+  const rows = window.PROWS || []; if (!rows.length) return;
+  document.querySelectorAll('#pace-tabs button').forEach(b => b.classList.toggle('on', +b.dataset.k === +k));
+  const byM = new Map();
+  for (const r of rows) {
+    if (typeof r[k] !== 'number') continue;
+    const ym = r[0].slice(0, 7), day = +r[0].slice(8, 10);
+    if (!byM.has(ym)) byM.set(ym, []);
+    byM.get(ym).push({ day, v: r[k] });
+  }
+  const yms = [...byM.keys()].sort().slice(-3);
+  if (!yms.length) return;
+  const cur = yms[yms.length - 1];
+  const markDay = Math.max(...byM.get(cur).map(p => p.day));
+  const styles = [
+    { color: 'var(--series-1)', width: 3.5 },
+    { color: 'var(--series-1-lt)', width: 2.5 },
+    { color: 'var(--baseline)', width: 2 },
+  ];
+  const seriesArr = yms.slice().reverse().map((ym, i) => ({
+    label: MON_FULL[+ym.slice(5, 7) - 1], pts: byM.get(ym).sort((a, b) => a.day - b.day), ...styles[i],
+  })).reverse();
+  document.getElementById('pace-chart').innerHTML = lineChart(seriesArr, markDay);
+  const cmp = yms.slice().reverse().map(ym => {
+    const upto = byM.get(ym).filter(p => p.day <= markDay);
+    return upto.length ? MON_FULL[+ym.slice(5, 7) - 1] + ' — ' + upto[upto.length - 1].v : null;
+  }).filter(Boolean);
+  document.getElementById('pace-title').textContent =
+    PACE_NAMES[k] + ', накопительно с 1-го числа · на ' + markDay + '-е число: ' + cmp.join(' · ');
+}
+document.getElementById('pace-tabs').addEventListener('click', e => {
+  const b = e.target.closest('button'); if (b) renderPace(+b.dataset.k);
+});
 drawQuarters();
 gvLoad('Лист1', '__gvM', 'A1:S300');
+gvLoad('Лист1', '__gvHead', 'A1:S1');
 gvLoad('Лист3', '__gvS', 'A1:M10');
+gvLoad('Лист4', '__gvP', 'A1:D400');
 gvLoad('Лист5', '__gvW', 'A1:L400');
+gvLoad('Лист8', '__gvH8', 'A1:C400');
 gvLoad('Лист10', '__gvT', 'A1:E400');
 gvLoad('Лист11', '__gvC', 'A1:D3000');
 gvLoad('Лист12', '__gvF', 'A1:J100');
