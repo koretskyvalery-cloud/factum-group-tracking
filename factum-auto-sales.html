@@ -908,6 +908,55 @@ document.getElementById('pace-tabs').addEventListener('click', e => {
   const b = e.target.closest('button'); if (b) renderPace(+b.dataset.k);
 });
 drawQuarters();
+// --- устойчивость: если «Менеджеры отчет» недоступна, поднимаем последние рабочие данные ---
+const GV_OK = {};
+function gvKeep(name, payload) {
+  GV_OK[name] = 1;
+  try { localStorage.setItem('fgt_' + name, JSON.stringify({ ts: Date.now(), p: payload })); } catch (e) {}
+}
+(function () {
+  const m0 = window.__gvM;
+  window.__gvM = (t, fc) => { m0(t); if (!fc && window.LF && window.LF.rows && window.LF.rows.net) gvKeep('__gvM', t); };
+  const h0 = window.__gvHead;
+  window.__gvHead = (t, fc) => { h0(t); if (!fc && window.DHEAD && String(window.DHEAD[3] || '').trim()) gvKeep('__gvHead', t); };
+  const s1 = window.__gvS;
+  window.__gvS = (t, fc) => { s1(t); if (!fc && window.SPER) gvKeep('__gvS', t); };
+})();
+// Лист3 (покупки по месяцам из «Общего зачета»), снято с живой таблицы 16.09.2026 до потери доступа
+const SEED_L3 = { table: { rows: [
+  [2025, 102, 94, 127, 139, 123, 136, 153, 171, 192, 156, 144, 139],
+  [2026, 139, 144, 182, 188, 187, 166, 176, 147, 78, null, null, null],
+].map(r => ({ c: r.map(v => ({ v })) })) } };
+setTimeout(() => {
+  if (GV_OK.__gvM && GV_OK.__gvS) return; // источник жив — ничего не делаем
+  let ts = null;
+  for (const name of ['__gvM', '__gvHead', '__gvS']) {
+    if (GV_OK[name]) continue;
+    try {
+      const c = JSON.parse(localStorage.getItem('fgt_' + name) || 'null');
+      if (c && c.p) { window[name](c.p, true); if (name === '__gvM') ts = c.ts; }
+    } catch (e) {}
+  }
+  if (!GV_OK.__gvS && !window.SPER) { try { window.__gvS(SEED_L3, true); } catch (e) {} }
+  let note = '';
+  if (window.LF && window.LF.rows && window.LF.rows.net) {
+    const d = ts ? new Date(ts) : null;
+    note = d ? ('показаны последние сохранённые данные от ' + String(d.getDate()).padStart(2, '0') + '.' + String(d.getMonth() + 1).padStart(2, '0') + ' ' + String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0')) : 'показаны последние сохранённые данные';
+  } else {
+    const pr = (window.PROWS || []).slice(-1)[0];
+    if (pr) {
+      if (typeof pr[2] === 'number') document.getElementById('sd-net').textContent = pr[2];
+      if (typeof pr[3] === 'number') document.getElementById('sd-buy').textContent = pr[3];
+      note = 'депозиты и покупки — из дневного снимка за ' + pr[0].slice(8, 10) + '.' + pr[0].slice(5, 7);
+    }
+    document.getElementById('sd-chart').innerHTML = '<div class="note" style="margin-top:4px">Помесячная хронология и разбивка по отделам вернутся после восстановления доступа к источнику.</div>';
+  }
+  const b = document.createElement('div');
+  b.className = 'note';
+  b.style.cssText = 'color:#b45309;margin-top:6px';
+  b.textContent = '⚠ Таблица-источник «Менеджеры отчет» недоступна (доступ пропал 16.09 ~15:30)' + (note ? ' · ' + note : '');
+  document.getElementById('sub').after(b);
+}, 9000);
 gvLoad('Лист1', '__gvM', 'A1:S300');
 gvLoad('Лист1', '__gvHead', 'A1:S1');
 gvLoad('Лист3', '__gvS', 'A1:M10');
