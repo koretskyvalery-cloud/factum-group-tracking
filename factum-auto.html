@@ -71,7 +71,7 @@
     <a class="dept" href="factum-auto-hr.html">
       <div class="dept-head"><span class="dept-name">HR-отдел</span><span class="arrow">→</span></div>
       <div class="dept-mini">
-        <div class="mini"><div class="mini-label">Активных менеджеров</div><div class="mini-value" id="hr-mgr">—</div></div>
+        <div class="mini"><div class="mini-label">Менеджеров работает</div><div class="mini-value" id="hr-mgr">—</div></div>
         <div class="mini"><div class="mini-label">Вакансии</div><div class="mini-value">4 <span class="demo-badge">демо</span></div></div>
       </div>
     </a>
@@ -204,7 +204,7 @@ window.__gvM = t => {
   try {
     const F = parseFacts(gvRows(t));
     const cm = new Date().getMonth() + 1;
-    if (F.mgr[cm] != null) document.getElementById('hr-mgr').textContent = F.mgr[cm];
+    // численность людей берём только из HR Битрикс24 (Лист8), см. __gvH8 ниже
     if (F.leads[cm] != null) document.getElementById('mk-leads').textContent = F.leads[cm];
     if (F.crDep[cm] != null) document.getElementById('mk-cr').textContent = String(F.crDep[cm]).replace('.', ',') + '%';
     // покупки показываем из «Общий зачет» (__gvS); Лист1 — только фолбэк
@@ -228,6 +228,16 @@ window.__gvS = t => {
 };
 gvLoad('Лист1', '__gvM');
 gvLoad('Лист3', '__gvS', 'A1:M10');
+// численность менеджеров — HR-данные Битрикс24 (Лист8: Дата | 30+ дней | всего)
+window.__gvH8 = t => {
+  try {
+    const rows = gvRows(t).filter(r => r[0] !== '' && r[1] !== '');
+    if (!rows.length) return;
+    const last = rows[rows.length - 1];
+    if (last[1] != null && last[1] !== '') document.getElementById('hr-mgr').textContent = last[1];
+  } catch (e) { console.log(e); }
+};
+gvLoad('Лист8', '__gvH8', 'A1:C400');
 </script>
 </body>
 </html>

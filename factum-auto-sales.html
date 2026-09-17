@@ -128,7 +128,7 @@
   <h2 id="dept-h" hidden>По отделам · текущий месяц</h2>
   <section class="card" id="dept-card" hidden>
     <div id="dept-table"></div>
-    <div class="note">«＋» у страны раскрывает её отделы. Новые отделы подтягиваются из таблицы автоматически. Покупки в этой разбивке — из «Аналитики продаж месячной» (могут отставать от «Общего зачета» на день-два).</div>
+    <div class="note">«＋» у страны раскрывает её отделы. Новые отделы подтягиваются автоматически. «С депозитами» — менеджеры, давшие хотя бы один депозит за месяц (результат из «Менеджеры отчет»); численность штата — это метрика «Менеджеров работает» выше, она из HR Битрикс24. Покупки в этой разбивке — из «Аналитики продаж месячной» (могут отставать от «Общего зачета» на день-два).</div>
   </section>
 
   <h2>Тёплые лиды</h2>
@@ -384,7 +384,7 @@ function renderDepts(F) {
   }
   if (totalIt) rows += tdRow(totalIt, 'total');
   document.getElementById('dept-table').innerHTML =
-    `<table class="dep"><thead><tr><th>Страна / отдел</th><th class="num">Менеджеров</th><th class="num">Лиды</th><th class="num">Чистые депозиты</th><th class="num">Покупки</th><th class="num">CR в депозит</th></tr></thead><tbody>${rows}</tbody></table>`;
+    `<table class="dep"><thead><tr><th>Страна / отдел</th><th class="num">С депозитами</th><th class="num">Лиды</th><th class="num">Чистые депозиты</th><th class="num">Покупки</th><th class="num">CR в депозит</th></tr></thead><tbody>${rows}</tbody></table>`;
   document.getElementById('dept-h').hidden = false;
   document.getElementById('dept-card').hidden = false;
 }
