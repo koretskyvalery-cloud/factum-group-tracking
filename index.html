@@ -736,7 +736,12 @@ function parseB2B(rows) {
       cur = (m && kind) ? m : null;
     }
     if (cur && String(row[1] || '').trim() === 'Покупки') {
-      if (kind === 'f') out[cur] = num(row[2]); else B2B_PLAN[cur] = num(row[2]);
+      // «ВСЕГО» (колонка C) в блоках ПЛАН иногда не заполнена — тогда складываем направления (D+E),
+      // как это и сделано в блоках «Факт»: 42=27+15, 19=14+5 и т.д.
+      const c = num(row[2]);
+      const d = num(row[3]), e = num(row[4]);
+      const tot = (c != null) ? c : ((d != null || e != null) ? (d || 0) + (e || 0) : null);
+      if (kind === 'f') out[cur] = tot; else B2B_PLAN[cur] = tot;
     }
   }
   return out;
