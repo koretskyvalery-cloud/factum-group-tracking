@@ -141,11 +141,16 @@ function gvLoad(sheet, cb) {
 let BLOB = null;
 window.__gvF14 = t => {
   try {
-    const rows = t.table.rows.map(r => r.c.map(c => c && c.v));
-    if (rows.length >= 2) BLOB = { nonce: rows[0][1], tag: rows[0][2], date: rows[0][3], ct: rows[1][0] };
-    else if (rows.length === 1 && String(rows[0][0]).length > 100) BLOB = null;
-    document.getElementById('err').textContent = BLOB ? '' : 'Данные ещё не выгружены — запустите синхронизацию.';
-  } catch (e) { console.log(e); }
+    const rows = (t.table && t.table.rows ? t.table.rows : []).map(r => (r.c||[]).map(c => c && c.v));
+    // лист с данными обязан начинаться с маркера v1; иначе gviz отдал другой лист
+    if (rows.length >= 2 && String(rows[0][0]||'').trim() === 'v1' &&
+        String(rows[0][1]||'').length > 8 && String(rows[0][2]||'').length > 20 && String(rows[1][0]||'').length > 100) {
+      BLOB = { nonce: String(rows[0][1]), tag: String(rows[0][2]), date: rows[0][3], ct: String(rows[1][0]) };
+    } else {
+      BLOB = null;
+    }
+    document.getElementById('err').textContent = BLOB ? '' : 'Данные ещё не выгружены — первая выгрузка идёт автоматически, попробуйте через 5 минут.';
+  } catch (e) { console.log(e); BLOB = null; }
 };
 
 async function hmac(keyBytes, msg) {
@@ -164,7 +169,7 @@ function b64eq(a, b) { return a.length === b.length && a.every((x, i) => x === b
 async function unlock() {
   const err = document.getElementById('err');
   const btn = document.getElementById('go');
-  if (!BLOB) { err.textContent = 'Данные ещё загружаются… попробуйте через пару секунд.'; return; }
+  if (!BLOB) { err.textContent = 'Данных пока нет — первая выгрузка идёт автоматически, попробуйте через 5 минут.'; return; }
   btn.disabled = true; err.textContent = 'Проверяю…';
   try {
     const pass = document.getElementById('pw').value;
