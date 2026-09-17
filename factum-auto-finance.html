@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
+<title>Финансы · Factum Group</title>
+<style>
+  :root {
+    color-scheme: light;
+    --page: #f9f9f7; --surface-1: #fcfcfb;
+    --text-primary: #0b0b0b; --text-secondary: #52514e; --text-muted: #898781;
+    --border: rgba(11,11,11,0.10); --grid: #e1e0d9; --baseline: #c3c2b7;
+    --series-1: #2a78d6; --series-1-lt: #86b6ef; --series-2: #eb6834; --series-3: #1baf7a;
+    --bad: #d64550;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:where(:not([data-theme="light"])) {
+      color-scheme: dark;
+      --page: #0d0d0d; --surface-1: #1a1a19;
+      --text-primary: #ffffff; --text-secondary: #c3c2b7; --text-muted: #898781;
+      --border: rgba(255,255,255,0.10); --grid: #2c2c2a; --baseline: #383835;
+      --series-1: #3987e5; --series-1-lt: #6da7ec; --series-2: #d95926; --series-3: #199e70;
+      --bad: #e05561;
+    }
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: system-ui, -apple-system, "Segoe UI", sans-serif; background: var(--page);
+         color: var(--text-primary); min-height: 100vh; padding: 24px 24px 40px; }
+  .wrap { max-width: 980px; margin: 0 auto; }
+  .back { font-size: 13px; color: var(--series-1); text-decoration: none; }
+  .back:hover { text-decoration: underline; }
+  h1 { font-size: 22px; font-weight: 700; margin-top: 8px; display: flex; align-items: center; gap: 10px; }
+  .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--series-3); flex: none; }
+  .sub { margin: 6px 0 18px; font-size: 13px; color: var(--text-secondary); }
+  h2 { font-size: 15px; font-weight: 650; margin: 20px 0 10px; }
+  .card { background: var(--surface-1); border: 1px solid var(--border); border-radius: 14px;
+          padding: 16px 18px 14px; margin-bottom: 12px; }
+  .metrics { display: flex; gap: 28px; flex-wrap: wrap; margin-bottom: 10px; }
+  .metric { min-width: 150px; }
+  .metric-label { font-size: 12px; color: var(--text-secondary); margin-bottom: 3px; }
+  .metric-value { font-size: 30px; line-height: 1.05; font-weight: 600; }
+  .metric-note { font-size: 12px; color: var(--text-muted); margin-top: 3px; }
+  .muted { color: var(--text-muted); }
+  .good { color: var(--series-3); }
+  .chart-title { font-size: 12px; color: var(--text-muted); margin: 4px 0 6px; }
+  .chart svg { display: block; width: 100%; height: auto; }
+  .note { font-size: 13px; color: var(--text-secondary); margin-top: 10px; line-height: 1.45; }
+  table.dep { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .dep th { text-align: left; font-size: 11px; color: var(--text-muted); font-weight: 600;
+            padding: 6px 8px; border-bottom: 1px solid var(--grid); }
+  .dep th.num, .dep td.num { text-align: right; font-variant-numeric: tabular-nums; }
+  .dep td { padding: 6px 8px; border-bottom: 1px solid var(--grid); }
+  .dep tr:last-child td { border-bottom: none; }
+  .dep tr.total td { font-weight: 750; border-top: 2px solid var(--baseline); }
+  /* парольный экран */
+  #gate { max-width: 380px; margin: 12vh auto 0; text-align: center; }
+  #gate .card { padding: 26px 24px; }
+  #gate h1 { justify-content: center; }
+  #gate input { font: inherit; width: 100%; padding: 10px 12px; margin: 14px 0 10px; border-radius: 10px;
+                border: 1px solid var(--border); background: var(--page); color: var(--text-primary); }
+  #gate button { font: inherit; font-weight: 600; width: 100%; padding: 10px; border-radius: 10px; border: none;
+                 background: var(--series-1); color: #fff; cursor: pointer; }
+  #gate button:disabled { opacity: .6; cursor: default; }
+  #gate .err { color: var(--bad); font-size: 13px; margin-top: 10px; min-height: 18px; }
+</style>
+</head>
+<body>
+<div id="gate">
+  <div class="card">
+    <h1><span class="dot"></span>Финансы</h1>
+    <div class="sub" style="margin-bottom:0">Раздел защищён — введите пароль</div>
+    <input id="pw" type="password" autocomplete="current-password" placeholder="Пароль">
+    <button id="go">Открыть</button>
+    <div class="err" id="err"></div>
+  </div>
+</div>
+
+<div class="wrap" id="app" hidden>
+  <a class="back" href="factum-auto.html">← Factum Auto</a><a class="back" href="index.html" style="margin-left:16px">⌂ На главную</a>
+  <h1><span class="dot"></span>Финансы · штат и ФОТ</h1>
+  <div class="sub" id="sub">данные из «Штат с зп» (Битрикс24)</div>
+
+  <section class="card">
+    <div class="metrics">
+      <div class="metric">
+        <div class="metric-label">Людей в компании</div>
+        <div class="metric-value" id="f-n">—</div>
+        <div class="metric-note">без СТО и 2 бухгалтеров сервиса</div>
+      </div>
+      <div class="metric">
+        <div class="metric-label">ФОТ сейчас · месяц</div>
+        <div class="metric-value" id="f-uah">—</div>
+        <div class="metric-note" id="f-usd"></div>
+      </div>
+      <div class="metric">
+        <div class="metric-label" id="f-next-l">С 1-го числа</div>
+        <div class="metric-value" id="f-next">—</div>
+        <div class="metric-note" id="f-next-n"></div>
+      </div>
+      <div class="metric">
+        <div class="metric-label" id="f-cut-l">Снято за месяц</div>
+        <div class="metric-value good" id="f-cut">—</div>
+        <div class="metric-note" id="f-cut-usd"></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="chart-title" id="f-chart-title">Нагрузка ставками по месяцам, тыс. грн (по датам увольнения; будущие приёмы не учтены)</div>
+    <div class="chart" id="f-chart"></div>
+  </section>
+
+  <section class="card" id="f-leav-card" hidden>
+    <div class="chart-title" id="f-leav-title">Уходят в этом месяце</div>
+    <div id="f-leav"></div>
+  </section>
+
+  <section class="card">
+    <div class="chart-title">По отделам · сейчас</div>
+    <div id="f-secs"></div>
+  </section>
+
+  <div class="note">Источник — «Штат с зп.xlsx» на диске Битрикс24 (группа «Сотрудники»), пересчёт каждые 2 часа.
+    Исключены отделы СТО и две ставки «Бухгалтер Сервіс». Данные на странице зашифрованы — без пароля они не читаются.</div>
+</div>
+
+<script>
+const SHEET_ID = '10sbvUaWDkrJJqIC7ciuSsci21GuRMUV5P2TBhZCTF8U';
+const SALT = 'fgt-fin-salt-v1';
+const ITER = 10000;
+const enc = new TextEncoder();
+
+function gvLoad(sheet, cb) {
+  window[cb + '_h'] = window[cb + '_h'] || null;
+  const s = document.createElement('script');
+  s.src = 'https://docs.google.com/spreadsheets/d/' + SHEET_ID + '/gviz/tq?sheet=' + encodeURIComponent(sheet) +
+    '&tqx=out:json;responseHandler:' + cb + '&t=' + Date.now();
+  document.head.appendChild(s);
+}
+let BLOB = null;
+window.__gvF14 = t => {
+  try {
+    const rows = t.table.rows.map(r => r.c.map(c => c && c.v));
+    if (rows.length >= 2) BLOB = { nonce: rows[0][1], tag: rows[0][2], date: rows[0][3], ct: rows[1][0] };
+    else if (rows.length === 1 && String(rows[0][0]).length > 100) BLOB = null;
+    document.getElementById('err').textContent = BLOB ? '' : 'Данные ещё не выгружены — запустите синхронизацию.';
+  } catch (e) { console.log(e); }
+};
+
+async function hmac(keyBytes, msg) {
+  const k = await crypto.subtle.importKey('raw', keyBytes, { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
+  return new Uint8Array(await crypto.subtle.sign('HMAC', k, typeof msg === 'string' ? enc.encode(msg) : msg));
+}
+async function kdf(pass) {
+  let k = enc.encode(SALT);
+  const msg = enc.encode(pass);
+  for (let i = 0; i < ITER; i++) k = await hmac(k, msg);
+  return k;
+}
+function b64d(s) { const bin = atob(s); const a = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) a[i] = bin.charCodeAt(i); return a; }
+function b64eq(a, b) { return a.length === b.length && a.every((x, i) => x === b[i]); }
+
+async function unlock() {
+  const err = document.getElementById('err');
+  const btn = document.getElementById('go');
+  if (!BLOB) { err.textContent = 'Данные ещё загружаются… попробуйте через пару секунд.'; return; }
+  btn.disabled = true; err.textContent = 'Проверяю…';
+  try {
+    const pass = document.getElementById('pw').value;
+    const key = await kdf(pass);
+    const macKey = await hmac(key, 'mac');
+    const tag = await hmac(macKey, BLOB.nonce + '|' + BLOB.ct);
+    if (!b64eq(tag, b64d(BLOB.tag))) { err.textContent = 'Неверный пароль.'; btn.disabled = false; return; }
+    const encKey = await hmac(key, 'enc');
+    const ct = b64d(BLOB.ct);
+    const pt = new Uint8Array(ct.length);
+    for (let b = 0; b * 32 < ct.length; b++) {
+      const ks = await hmac(encKey, BLOB.nonce + ':' + b);
+      for (let j = 0; j < 32 && b * 32 + j < ct.length; j++) pt[b * 32 + j] = ct[b * 32 + j] ^ ks[j];
+    }
+    const data = JSON.parse(new TextDecoder().decode(pt));
+    try { sessionStorage.setItem('fgt_fin_pw', pass); } catch (e) {}
+    render(data);
+  } catch (e) { console.log(e); err.textContent = 'Ошибка расшифровки.'; btn.disabled = false; }
+}
+
+const MONF = ['январь','февраль','март','апрель','май','июнь','июль','август','сентябрь','октябрь','ноябрь','декабрь'];
+const MONS = ['янв','фев','мар','апр','май','июн','июл','авг','сен','окт','ноя','дек'];
+function uah(v) { return Math.round(v).toLocaleString('ru-RU').replace(/,/g, ' ') + ' грн'; }
+function usd(v, fx) { return fx > 0 ? '≈ $' + Math.round(v / fx).toLocaleString('ru-RU').replace(/,/g, ' ') : ''; }
+function esc(s) { return String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+
+function render(d) {
+  document.getElementById('gate').hidden = true;
+  document.getElementById('app').hidden = false;
+  document.getElementById('sub').textContent = 'данные из «Штат с зп» (Битрикс24) · выгрузка ' + d.asof +
+    (d.fx ? ' · курс ' + d.fx + ' грн/$' : '');
+  const cm = new Date().getMonth();
+  document.getElementById('f-n').textContent = d.cur.n;
+  document.getElementById('f-uah').textContent = uah(d.cur.uah);
+  document.getElementById('f-usd').textContent = usd(d.cur.uah, d.fx) + ' в месяц';
+  document.getElementById('f-next-l').textContent = 'С 1-го числа (' + MONF[(cm + 1) % 12] + ')';
+  document.getElementById('f-next').textContent = uah(d.next.uah);
+  document.getElementById('f-next-n').textContent = d.next.n + ' чел · ' + usd(d.next.uah, d.fx);
+  document.getElementById('f-cut-l').textContent = 'Снято за ' + MONF[cm];
+  document.getElementById('f-cut').textContent = (d.next.cut > 0 ? '−' : '') + uah(d.next.cut);
+  document.getElementById('f-cut-usd').textContent = (d.next.leavers || []).length + ' чел уходят · ' + usd(d.next.cut, d.fx);
+  // график по месяцам
+  const ms = d.months || [];
+  const W = 900, H = 230, padL = 10, padB = 40, padT = 26;
+  const maxV = Math.max(1, ...ms.map(m => m.uah));
+  const bw = (W - padL * 2) / ms.length;
+  let svg = '';
+  ms.forEach((m, i) => {
+    const h = (m.uah / maxV) * (H - padT - padB);
+    const x = padL + i * bw + bw * 0.14, y = H - padB - h;
+    const curM = i === 0;
+    svg += `<rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${(bw * 0.72).toFixed(1)}" height="${h.toFixed(1)}" rx="6" fill="${curM ? 'var(--series-1)' : 'var(--series-1-lt)'}"/>`;
+    svg += `<text x="${(x + bw * 0.36).toFixed(1)}" y="${(y - 8).toFixed(1)}" text-anchor="middle" font-size="13" font-weight="650" fill="var(--text-primary)">${Math.round(m.uah / 1000).toLocaleString('ru-RU')}</text>`;
+    svg += `<text x="${(x + bw * 0.36).toFixed(1)}" y="${H - padB + 16}" text-anchor="middle" font-size="11.5" fill="var(--text-muted)">${MONS[+m.ym.slice(5, 7) - 1]}</text>`;
+    svg += `<text x="${(x + bw * 0.36).toFixed(1)}" y="${H - padB + 30}" text-anchor="middle" font-size="10.5" fill="var(--text-muted)">${m.n} чел</text>`;
+  });
+  svg += `<line x1="${padL}" y1="${H - padB}" x2="${W - padL}" y2="${H - padB}" stroke="var(--baseline)"/>`;
+  document.getElementById('f-chart').innerHTML = `<svg viewBox="0 0 ${W} ${H}" role="img">${svg}</svg>`;
+  // уходящие
+  const lv = d.next.leavers || [];
+  if (lv.length) {
+    document.getElementById('f-leav-card').hidden = false;
+    document.getElementById('f-leav-title').textContent = 'Уходят в ' + MONF[cm].replace(/[ья]$/, m0 => ({'ь':'е','я':'е'}[m0] || m0)) + ' — ' + lv.length + ' чел';
+    document.getElementById('f-leav').innerHTML = '<table class="dep"><tr><th>Сотрудник</th><th>Должность</th><th>Отдел</th><th class="num">Дата ух.</th><th class="num">Ставка</th></tr>' +
+      lv.map(x => `<tr><td>${esc(x.fio)}</td><td>${esc(x.pos)}</td><td>${esc(x.sec)}${x.city ? ' · ' + esc(x.city) : ''}</td><td class="num">${esc(x.d)}</td><td class="num">${uah(x.uah)}</td></tr>`).join('') +
+      `<tr class="total"><td>Итого</td><td></td><td></td><td></td><td class="num">−${uah(d.next.cut)}</td></tr></table>`;
+  }
+  // отделы
+  const secs = (d.secs || []).slice().sort((a, b) => b.uah - a.uah);
+  document.getElementById('f-secs').innerHTML = '<table class="dep"><tr><th>Отдел</th><th class="num">Людей</th><th class="num">ФОТ, грн</th><th class="num">Доля</th></tr>' +
+    secs.map(s => `<tr><td>${esc(s.name)}</td><td class="num">${s.n}</td><td class="num">${Math.round(s.uah).toLocaleString('ru-RU')}</td><td class="num">${d.cur.uah > 0 ? (s.uah / d.cur.uah * 100).toFixed(1) + '%' : ''}</td></tr>`).join('') +
+    `<tr class="total"><td>Итого</td><td class="num">${d.cur.n}</td><td class="num">${Math.round(d.cur.uah).toLocaleString('ru-RU')}</td><td class="num">100%</td></tr></table>`;
+}
+
+document.getElementById('go').addEventListener('click', unlock);
+document.getElementById('pw').addEventListener('keydown', e => { if (e.key === 'Enter') unlock(); });
+gvLoad('Лист14', '__gvF14');
+// автоввод, если пароль уже вводили в этой вкладке
+setTimeout(() => {
+  try {
+    const p = sessionStorage.getItem('fgt_fin_pw');
+    if (p && BLOB) { document.getElementById('pw').value = p; unlock(); }
+  } catch (e) {}
+}, 1200);
+</script>
+</body>
+</html>
