@@ -105,6 +105,30 @@
 
   .foot { margin-top: 10px; font-size: 12px; color: var(--text-muted); }
   .err { padding: 24px; color: var(--text-secondary); font-size: 13px; }
+
+  table { min-width: 1120px; }
+  col.c-unit { width: 130px; }
+  col.c-dept { width: 190px; }
+  col.c-goal { width: 260px; }
+  td.unit { font-size: 14px; font-weight: 700; vertical-align: top; border-right: 1px solid var(--border);
+            background: color-mix(in srgb, var(--surface-1) 70%, var(--page)); }
+  td.unit .n { font-size: 11px; font-weight: 600; color: var(--text-muted); letter-spacing: 0.06em; margin-bottom: 3px; }
+  tr.unit-start td { border-top: 2px solid var(--grid); }
+  tr.band td { padding: 5px 12px; font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase;
+               color: var(--series-1); background: color-mix(in srgb, var(--series-1) 5%, transparent); }
+  td.dept.market { padding-left: 24px; font-weight: 600; }
+  td.dept.market::before { content: '· '; color: var(--text-muted); }
+
+  .seg { display: inline-flex; border: 1px solid var(--border); border-radius: 10px; overflow: hidden; background: var(--surface-1); margin-right: 8px; }
+  .seg button { font: inherit; font-size: 13px; font-weight: 600; padding: 7px 14px; border: 0; background: transparent; color: var(--text-secondary); cursor: pointer; }
+  .seg button.on { background: var(--series-1); color: #fff; }
+  .fact { display: grid; grid-template-columns: 44px 1fr; gap: 4px 8px; font-size: 12.5px; line-height: 1.4; }
+  .fact .dt { color: var(--text-muted); font-variant-numeric: tabular-nums; }
+  .fact .k { display: inline-block; width: 7px; height: 7px; border-radius: 50%; margin-right: 6px; vertical-align: middle; }
+  .k.result { background: var(--series-1); } .k.done { background: var(--status-good); } .k.progress { background: var(--status-warn); } .k.call { background: #b25dd6; }
+  body[data-mode="fact"] table { min-width: 1560px; }
+  body[data-mode="fact"] col.c-goal { width: 200px; }
+  body[data-mode="fact"] .fact { grid-template-columns: 40px 1fr; }
 </style>
 </head>
 <body>
@@ -112,61 +136,74 @@
   <header>
     <div>
       <div class="kicker"><a href="index.html">Factum Group Tracking</a> · Цели и вехи</div>
-      <h1>Цели 2026 и вехи по департаментам</h1>
+      <h1>Цели 2026 и вехи по отделам и департаментам</h1>
       <div class="sub" id="sub">Загрузка…</div>
     </div>
     <div class="legend">
+      <span class="seg" id="seg"><button class="on" data-mode="plan">Планы</button><button data-mode="fact">Фактические результаты</button></span>
       <span class="chip"><span class="d done"></span>сделано</span>
       <span class="chip"><span class="d progress"></span>в работе</span>
       <span class="chip"><span class="d plan"></span>план</span>
+      <span class="chip fl"><span class="d" style="background:var(--series-1)"></span>результат</span><span class="chip fl"><span class="d" style="background:#b25dd6"></span>созвон</span>
     </div>
   </header>
 
   <div class="card"><div class="tbl" id="tbl"></div></div>
-  <div class="foot">Прошедшие и текущий месяц — основные вехи; будущие — задачи к реализации. Запись со ссылкой открывает задачу в Битрикс24.</div>
+  <div class="foot">«Планы» — вехи и задачи по месяцам (запись со ссылкой открывает задачу в Битрикс24). «Фактические результаты» — хронология: результаты закрытых задач, прогресс по цели, задачи с созвонов.</div>
 </div>
 
 <script>
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-
+let MODE = 'plan';
 function render(data) {
-  const cur = data.current;
-  const months = data.months;
+  document.body.dataset.mode = MODE;
+  document.querySelectorAll('.chip.fl').forEach(e => e.style.display = MODE === 'fact' ? '' : 'none');
+  const cur = data.current, months = data.months;
   const curLabel = months.find(m => m.id === cur)?.label || '';
-  document.getElementById('sub').textContent =
-    `${curLabel} — текущий месяц · обновлено ${data.updated}`;
-
-  const head = `<colgroup><col class="c-dept"><col class="c-goal">${months.map(() => '<col>').join('')}</colgroup>
-    <thead><tr><th>Департамент</th><th>Цель 2026</th>${months.map(m =>
+  document.getElementById('sub').textContent = `${curLabel} — текущий месяц · обновлено ${data.updated}`;
+  const head = `<colgroup><col class="c-unit"><col class="c-dept"><col class="c-goal">${months.map(() => '<col>').join('')}</colgroup>
+    <thead><tr><th>Отдел</th><th>Департамент</th><th>Цель 2026</th>${months.map(m =>
       `<th class="${m.id === cur ? 'cur' : ''}">${esc(m.label)}${m.id === cur ? ' · идёт' : ''}</th>`).join('')}</tr></thead>`;
-
-  const rows = data.departments.map(d => {
-    const cells = months.map(m => {
-      const items = (d.items || []).filter(i => i.month === m.id);
-      const isCur = m.id === cur;
-      const past = m.id <= cur;
-      const inner = items.length
-        ? `<div class="cell">${items.map(i => {
-            const link = i.link ? ` data-link="${esc(i.link)}"` : '';
-            return `<span class="chip item${i.link ? ' has-link' : ''}"${link} title="${i.link ? 'Открыть задачу в Битрикс24' : ''}"><span class="d ${esc(i.status || 'plan')}"></span>${esc(i.text)}</span>`;
-          }).join('')}</div>`
-        : `<span class="none">${past ? '— нет вех' : '— задачи не поставлены'}</span>`;
-      return `<td class="${isCur ? 'cur' : ''}">${inner}</td>`;
-    }).join('');
-    const goal = d.goal ? esc(d.goal) : '<span class="empty">цель не задана</span>';
-    const note = d.note ? `<div class="note">${esc(d.note)}</div>` : '';
-    const grp = d.group ? `<div class="grp">${esc(d.group)}</div>` : '';
-    return `<tr class="${d.group ? 'in-group' : ''}"><td class="dept">${grp}${esc(d.name)}${note}</td><td class="goal">${goal}</td>${cells}</tr>`;
+  const factCells = d => months.map(m => {
+    const fs = (d.facts || []).filter(f => f.month === m.id);
+    const isCur = m.id === cur, past = m.id <= cur;
+    const inner = fs.length
+      ? `<div class="fact">${fs.map(f => `<span class="dt">${esc(f.date)}</span><span><span class="k ${esc(f.kind)}"></span>${esc(f.text)}</span>`).join('')}</div>`
+      : `<span class="none">${past ? '— записей нет' : '— месяц не начался'}</span>`;
+    return `<td class="${isCur ? 'cur' : ''}">${inner}</td>`;
   }).join('');
-
+  const monthCells = d => MODE === 'fact' ? factCells(d) : months.map(m => {
+    const items = (d.items || []).filter(i => i.month === m.id);
+    const isCur = m.id === cur, past = m.id <= cur;
+    const inner = items.length
+      ? `<div class="cell">${items.map(i => `<span class="chip item${i.link ? ' has-link' : ''}"${i.link ? ` data-link="${esc(i.link)}"` : ''}><span class="d ${esc(i.status || 'plan')}"></span>${esc(i.text)}</span>`).join('')}</div>`
+      : `<span class="none">${past ? '— нет вех' : '— задачи не поставлены'}</span>`;
+    return `<td class="${isCur ? 'cur' : ''}">${inner}</td>`;
+  }).join('');
+  let rows = '';
+  data.units.forEach((u, ui) => {
+    const deps = u.departments;
+    deps.forEach((d, i) => {
+      const first = i === 0;
+      const unitCell = first ? `<td class="unit" rowspan="${deps.length}"><div class="n">ОТДЕЛ ${ui + 1}</div>${esc(u.name)}</td>` : '';
+      if (d.band) { rows += `<tr class="band${first ? ' unit-start' : ''}">${unitCell}<td colspan="${2 + months.length}">${esc(d.band)}</td></tr>`; return; }
+      const goal = d.goal ? esc(d.goal) : '<span class="empty">цель не задана</span>';
+      const note = d.note ? `<div class="note">${esc(d.note)}</div>` : '';
+      rows += `<tr class="${first ? 'unit-start' : ''}">${unitCell}<td class="dept${d.market ? ' market' : ''}">${esc(d.name)}${note}</td><td class="goal">${goal}</td>${monthCells(d)}</tr>`;
+    });
+  });
   document.getElementById('tbl').innerHTML = `<table>${head}<tbody>${rows}</tbody></table>`;
-  document.querySelectorAll('.item.has-link').forEach(el =>
-    el.addEventListener('click', () => window.open(el.dataset.link, '_blank', 'noopener')));
+  document.querySelectorAll('.item.has-link').forEach(el => el.addEventListener('click', () => window.open(el.dataset.link, '_blank', 'noopener')));
 }
-
+let DATA = null;
+document.getElementById('seg').addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b) return;
+  MODE = b.dataset.mode; document.querySelectorAll('#seg button').forEach(x => x.classList.toggle('on', x === b));
+  if (DATA) render(DATA);
+});
 fetch('goals.json', { cache: 'no-store' })
   .then(r => { if (!r.ok) throw new Error(r.status); return r.json(); })
-  .then(render)
+  .then(d => { DATA = d; render(d); })
   .catch(() => {
     document.getElementById('sub').textContent = 'Данные не загрузились';
     document.getElementById('tbl').innerHTML = '<div class="err">Не удалось прочитать goals.json. Обновите страницу.</div>';
