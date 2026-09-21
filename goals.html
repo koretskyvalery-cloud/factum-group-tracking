@@ -107,7 +107,7 @@
   .err { padding: 24px; color: var(--text-secondary); font-size: 13px; }
 
   table { min-width: 1120px; }
-  col.c-unit { width: 130px; }
+  col.c-unit { width: 168px; }
   col.c-dept { width: 190px; }
   col.c-goal { width: 260px; }
   td.unit { font-size: 14px; font-weight: 700; vertical-align: top; border-right: 1px solid var(--border);
@@ -129,6 +129,13 @@
   body[data-mode="fact"] table { min-width: 1560px; }
   body[data-mode="fact"] col.c-goal { width: 200px; }
   body[data-mode="fact"] .fact { grid-template-columns: 40px 1fr; }
+
+  .ulink { display: inline-block; margin-top: 8px; font-size: 11.5px; font-weight: 600; padding: 3px 8px; border-radius: 7px;
+           border: 1px solid var(--border); background: var(--surface-1); color: var(--series-1); white-space: nowrap; }
+  .ulink:hover { text-decoration: none; background: color-mix(in srgb, var(--series-1) 10%, var(--surface-1)); }
+  .now { display: flex; flex-direction: column; gap: 10px; margin-top: 14px; padding-top: 12px; border-top: 1px dashed var(--border); }
+  .now .nv { font-size: 24px; font-weight: 700; letter-spacing: -0.01em; line-height: 1.1; color: var(--text-primary); }
+  .now .nl { font-size: 11px; color: var(--text-muted); margin-top: 1px; }
 </style>
 </head>
 <body>
@@ -149,12 +156,13 @@
   </header>
 
   <div class="card"><div class="tbl" id="tbl"></div></div>
-  <div class="foot">«Планы» — вехи и задачи по месяцам (запись со ссылкой открывает задачу в Битрикс24). «Фактические результаты» — хронология: результаты закрытых задач, прогресс по цели, задачи с созвонов.</div>
+  <div class="foot">Цифры под названием отдела — текущий месяц из таблицы, обновляются при открытии. «Планы» — вехи и задачи по месяцам (запись со ссылкой открывает задачу в Битрикс24). «Фактические результаты» — хронология: результаты закрытых задач, прогресс по цели, задачи с созвонов.</div>
 </div>
 
 <script>
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 let MODE = 'plan';
+const LIVE = {};
 function render(data) {
   document.body.dataset.mode = MODE;
   document.querySelectorAll('.chip.fl').forEach(e => e.style.display = MODE === 'fact' ? '' : 'none');
@@ -185,7 +193,7 @@ function render(data) {
     const deps = u.departments;
     deps.forEach((d, i) => {
       const first = i === 0;
-      const unitCell = first ? `<td class="unit" rowspan="${deps.length}"><div class="n">ОТДЕЛ ${ui + 1}</div>${esc(u.name)}</td>` : '';
+      const unitCell = first ? `<td class="unit" rowspan="${deps.length}"><div class="n">ОТДЕЛ ${ui + 1}</div>${esc(u.name)}${u.link ? `<br><a class="ulink" href="${esc(u.link)}">${u.lock ? '🔒 ' : ''}Аналитика →</a>` : ''}${(u.live && u.live.length) ? `<div class="now">${u.live.map(([id, lbl]) => `<div><div class="nv" id="live-${id}">${LIVE[id] ?? '—'}</div><div class="nl">${esc(lbl)}</div></div>`).join('')}</div>` : ''}</td>` : '';
       if (d.band) { rows += `<tr class="band${first ? ' unit-start' : ''}">${unitCell}<td colspan="${2 + months.length}">${esc(d.band)}</td></tr>`; return; }
       const goal = d.goal ? esc(d.goal) : '<span class="empty">цель не задана</span>';
       const note = d.note ? `<div class="note">${esc(d.note)}</div>` : '';
@@ -208,6 +216,55 @@ fetch('goals.json', { cache: 'no-store' })
     document.getElementById('sub').textContent = 'Данные не загрузились';
     document.getElementById('tbl').innerHTML = '<div class="err">Не удалось прочитать goals.json. Обновите страницу.</div>';
   });
+
+// ---- текущие показатели отделов: прослойка Google-таблицы (как на плитках раньше) ----
+const SHEET_ID = '10sbvUaWDkrJJqIC7ciuSsci21GuRMUV5P2TBhZCTF8U';
+const MONTH_NUM = {'Январь':1,'Февраль':2,'Март':3,'Апрель':4,'Май':5,'Июнь':6,'Июль':7,'Август':8,'Сентябрь':9,'Октябрь':10,'Ноябрь':11,'Декабрь':12};
+const gvRows = t => (t.table.rows || []).map(r => (r.c || []).map(c => (c && c.v != null) ? c.v : ''));
+const num = v => { if (typeof v === 'number') return Math.round(v); const s = String(v).trim().replace(/\s/g, '').replace(',', '.'); if (!s) return null; const f = parseFloat(s); return isNaN(f) ? null : Math.round(f); };
+const pct = v => { let f = null; if (typeof v === 'number') f = v < 1 ? v * 100 : v; else { const s = String(v).replace(',', '.').replace('%', '').trim(); if (s) f = parseFloat(s); } return (f == null || isNaN(f)) ? null : Math.round(f * 10) / 10; };
+const monthOf = l => { for (const n in MONTH_NUM) if (String(l).startsWith(n)) return MONTH_NUM[n]; return null; };
+function setLive(id, val) { if (val == null || val === '') return; LIVE[id] = val; const el = document.getElementById('live-' + id); if (el) el.textContent = val; }
+function gvLoad(sheet, handler, range) {
+  const s = document.createElement('script');
+  s.src = 'https://docs.google.com/spreadsheets/d/' + SHEET_ID + '/gviz/tq?tqx=responseHandler:' + handler +
+          '&sheet=' + encodeURIComponent(sheet) + '&range=' + range + '&headers=0&t=' + Date.now();
+  document.body.appendChild(s);
+}
+window.__gvM = t => {  // Лист1 — «Аналитика продаж месячная»: лиды, CR, чистые депозиты (покупки — фолбэк)
+  try {
+    const cm = new Date().getMonth() + 1; let cur = null; const F = {};
+    for (const row of gvRows(t)) {
+      const a = String(row[0] || '').trim();
+      if (a && a.indexOf('2026') > -1) { const m = monthOf(a); cur = (m && a.indexOf('Факт') > -1) ? m : null; }
+      if (cur !== cm) continue;
+      const c = String(row[1] || '').trim();
+      if (c === 'Лиды') F.leads = num(row[2]);
+      else if (c.startsWith('Депозиты Факт')) F.net = num(row[2]);
+      else if (c === 'Покупки') F.buy = num(row[2]);
+      else if (c.startsWith('CR из лида в деп')) F.cr = pct(row[2]);
+    }
+    setLive('mk-leads', F.leads);
+    if (F.cr != null) setLive('mk-cr', String(F.cr).replace('.', ',') + '%');
+    setLive('sd-net', F.net);
+    if (LIVE['sd-buy'] == null) setLive('sd-buy', F.buy);
+  } catch (e) { console.log(e); }
+};
+window.__gvS = t => {  // Лист3 — «Общий зачет»: покупки по месяцам (основной источник)
+  try {
+    const y = new Date().getFullYear(), cm = new Date().getMonth() + 1;
+    for (const r of gvRows(t)) if (Number(r[0]) === y) { const v = num(r[cm]); if (typeof v === 'number') setLive('sd-buy', v); }
+  } catch (e) { console.log(e); }
+};
+window.__gvH8 = t => {  // Лист8 — HR Битрикс24: менеджеров работает (последняя строка)
+  try {
+    const rows = gvRows(t).filter(r => r[0] !== '' && r[1] !== '');
+    if (rows.length) setLive('hr-mgr', rows[rows.length - 1][1]);
+  } catch (e) { console.log(e); }
+};
+gvLoad('Лист1', '__gvM', 'A1:C300');
+gvLoad('Лист3', '__gvS', 'A1:M10');
+gvLoad('Лист8', '__gvH8', 'A1:C400');
 </script>
 </body>
 </html>
