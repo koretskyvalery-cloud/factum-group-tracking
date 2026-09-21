@@ -723,13 +723,26 @@ function parseMonthly(rows) {
   }
   return out;
 }
+let B2B_PLAN = {};
 function parseB2B(rows) {
   const out = {};
-  let cur = null;
+  B2B_PLAN = {};
+  let cur = null, kind = null;
   for (const row of rows) {
     const a = String(row[0] || '').trim();
-    if (a) { const m = monthOf(a); cur = (m && a.indexOf('Факт') > -1) ? m : null; }
-    if (cur && String(row[1] || '').trim() === 'Покупки') out[cur] = num(row[2]);
+    if (a) {
+      const m = monthOf(a), up = a.toUpperCase();
+      kind = up.indexOf('ФАКТ') > -1 ? 'f' : (up.indexOf('ПЛАН') > -1 ? 'p' : null);
+      cur = (m && kind) ? m : null;
+    }
+    if (cur && String(row[1] || '').trim() === 'Покупки') {
+      // «ВСЕГО» (колонка C) в блоках ПЛАН иногда не заполнена — тогда складываем направления (D+E),
+      // как это и сделано в блоках «Факт»: 42=27+15, 19=14+5 и т.д.
+      const c = num(row[2]);
+      const d = num(row[3]), e = num(row[4]);
+      const tot = (c != null) ? c : ((d != null || e != null) ? (d || 0) + (e || 0) : null);
+      if (kind === 'f') out[cur] = tot; else B2B_PLAN[cur] = tot;
+    }
   }
   return out;
 }
@@ -761,7 +774,7 @@ function buildProjects(monthly, b2b, now) {
       chartTitle: 'Факт по месяцам, 2026 (текущий месяц — идёт)', months: months },
     { name: 'Operator-EX', desc: 'Логистика для дилеров', demo: false, span2: false, color: 'var(--series-2)',
       metrics: [
-        { label: 'Куплено авто дилерами', fact: b2b[cm] || 0, plan: null, series: bMonths.map(m => b2b[m]), color: 'var(--series-2)' },
+        { label: 'Куплено авто дилерами', fact: b2b[cm] || 0, plan: (B2B_PLAN[cm] ?? null), series: bMonths.map(m => b2b[m]), color: 'var(--series-2)' },
       ],
       chartTitle: 'Факт по месяцам (аналитика ведётся с июня; текущий — идёт)', months: bMonths.map(m => MONTH_ABBR[m - 1]) },
   ];
@@ -863,7 +876,7 @@ function gvLoad(sheet, handler, range) {
   document.body.appendChild(s);
 }
 gvLoad('Лист1', '__gvM');
-gvLoad('Лист2', '__gvB');
+gvLoad('Лист2', '__gvB', 'A1:E300'); // E — чтобы видеть направления, когда ВСЕГО не заполнено
 gvLoad('Лист3', '__gvS', 'A1:M10');
 gvLoad('Лист4', '__gvH', 'A1:D400');
 gvLoad('Лист6', '__gvP', 'A1:F3000');
