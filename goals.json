@@ -64,6 +64,13 @@
             }
           ]
         }
+      ],
+      "link": "factum-auto-hr.html",
+      "live": [
+        [
+          "hr-mgr",
+          "Менеджеров работает"
+        ]
       ]
     },
     {
@@ -107,6 +114,17 @@
           "goal": "",
           "items": []
         }
+      ],
+      "link": "factum-auto-marketing.html",
+      "live": [
+        [
+          "mk-leads",
+          "Лиды за месяц"
+        ],
+        [
+          "mk-cr",
+          "CR в депозит"
+        ]
       ]
     },
     {
@@ -158,7 +176,51 @@
           "name": "Отдел подбора",
           "goal": "Менеджеры сами покупают авто клиентов; программа обучения подбору",
           "items": []
+        },
+        {
+          "band": "Страны"
+        },
+        {
+          "name": "Украина",
+          "market": true,
+          "goal": "",
+          "items": []
+        },
+        {
+          "name": "Молдова",
+          "market": true,
+          "goal": "",
+          "items": []
+        },
+        {
+          "name": "Польша",
+          "market": true,
+          "goal": "",
+          "items": []
+        },
+        {
+          "name": "Грузия",
+          "market": true,
+          "goal": "",
+          "items": []
+        },
+        {
+          "name": "Армения",
+          "market": true,
+          "goal": "",
+          "items": []
         }
+      ],
+      "link": "factum-auto-sales.html",
+      "live": [
+        [
+          "sd-buy",
+          "Покупки"
+        ],
+        [
+          "sd-net",
+          "Депозиты (чистые)"
+        ]
       ]
     },
     {
@@ -221,7 +283,7 @@
           ]
         },
         {
-          "band": "Рынки"
+          "band": "Страны"
         },
         {
           "name": "США",
@@ -286,7 +348,9 @@
             }
           ]
         }
-      ]
+      ],
+      "link": "factum-auto-finance.html",
+      "lock": true
     },
     {
       "name": "Служба безопасности",
