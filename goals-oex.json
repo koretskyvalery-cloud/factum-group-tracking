@@ -1,0 +1,191 @@
+{
+  "title": "Operator-EX · цели 2026 и вехи",
+  "kicker": "Цели и вехи · Operator-EX",
+  "updated": "22.09.2026",
+  "current": "2026-09",
+  "months": [
+    {
+      "id": "2026-09",
+      "label": "Сентябрь"
+    },
+    {
+      "id": "2026-10",
+      "label": "Октябрь"
+    },
+    {
+      "id": "2026-11",
+      "label": "Ноябрь"
+    },
+    {
+      "id": "2026-12",
+      "label": "Декабрь"
+    }
+  ],
+  "units": [
+    {
+      "name": "Operator-EX",
+      "note": "B2B-продажи дилерам · руководитель Кирилл Салацкий",
+      "live": [
+        [
+          "oex-buy",
+          "Куплено авто дилерами"
+        ]
+      ],
+      "departments": [
+        {
+          "name": "Продажи дилерам",
+          "note": "основной департамент",
+          "goal": "Покупки по месяцам: сент 27 · окт 30 · ноя 35 · дек 45 · янв 50; активная база ≥50 дилеров; вал отдела в январе — по утверждённому плану",
+          "items": [
+            {
+              "month": "2026-09",
+              "text": "27 покупок за месяц",
+              "status": "progress"
+            },
+            {
+              "month": "2026-10",
+              "text": "30 покупок; итоги квартала 1 (авг–окт)",
+              "status": "plan",
+              "link": "https://factum-group.bitrix24.eu/company/personal/user/52/tasks/task/view/8491/"
+            },
+            {
+              "month": "2026-11",
+              "text": "35 покупок; Байдак на расчётном объёме — 10 дилеров, 15 покупок/мес",
+              "status": "plan",
+              "link": "https://factum-group.bitrix24.eu/company/personal/user/52/tasks/task/view/8495/"
+            },
+            {
+              "month": "2026-12",
+              "text": "45 покупок",
+              "status": "plan"
+            }
+          ],
+          "facts": [
+            {
+              "month": "2026-09",
+              "date": "03.09",
+              "kind": "done",
+              "text": "Байдак: задача 3-го месяца (7 покупок, +2 дилера) закрыта"
+            },
+            {
+              "month": "2026-09",
+              "date": "22.09",
+              "kind": "result",
+              "text": "На 22.09: 18 покупок из плана 27 (67%) — в темпе"
+            }
+          ]
+        },
+        {
+          "name": "Команда и найм",
+          "goal": "Три новых менеджера за квартал — Молдова, Польша, Украина; рамп новичка 1 / 3 / 7 покупок в 1–3 месяцы",
+          "items": [
+            {
+              "month": "2026-09",
+              "text": "Менеджер Молдова — выход в сентябре",
+              "status": "done",
+              "link": "https://factum-group.bitrix24.eu/company/personal/user/52/tasks/task/view/8481/"
+            },
+            {
+              "month": "2026-10",
+              "text": "Менеджер Польша — выход до 15.10",
+              "status": "plan",
+              "link": "https://factum-group.bitrix24.eu/company/personal/user/52/tasks/task/view/8485/"
+            },
+            {
+              "month": "2026-11",
+              "text": "Менеджер Украина — выход в ноябре",
+              "status": "progress",
+              "link": "https://factum-group.bitrix24.eu/company/personal/user/52/tasks/task/view/8487/"
+            }
+          ],
+          "facts": [
+            {
+              "month": "2026-09",
+              "date": "18.09",
+              "kind": "done",
+              "text": "Найм менеджера Молдова закрыт"
+            },
+            {
+              "month": "2026-09",
+              "date": "18.09",
+              "kind": "progress",
+              "text": "Менеджер Украина — задача сдана на приёмку раньше срока (16.11)"
+            }
+          ]
+        },
+        {
+          "name": "Холодные продажи",
+          "goal": "Основной канал отдела: база дилеров UA / MD / PL в CRM, скрипт первого касания и каданс, нормы касаний в день",
+          "items": [
+            {
+              "month": "2026-10",
+              "text": "База + скрипт + нормы утверждены, первые касания в CRM — 15.10",
+              "status": "plan",
+              "link": "https://factum-group.bitrix24.eu/company/personal/user/52/tasks/task/view/8483/"
+            }
+          ]
+        },
+        {
+          "name": "Передача базы",
+          "note": "22 дилера руководителя → менеджерам",
+          "goal": "100% базы передано к 30.11; покупки по переданным дилерам не проседают более чем на 10%",
+          "items": [
+            {
+              "month": "2026-11",
+              "text": "≥50% базы к 15.11, 100% — к 30.11",
+              "status": "progress",
+              "link": "https://factum-group.bitrix24.eu/company/personal/user/52/tasks/task/view/8473/"
+            }
+          ]
+        },
+        {
+          "name": "Процессы и CRM",
+          "goal": "Вся работа отдела в Битрикс24 — в каждой сделке видна переписка и звонки; Playbook работы с дилером утверждён",
+          "items": [
+            {
+              "month": "2026-09",
+              "text": "Playbook работы с дилером — на приёмке",
+              "status": "progress",
+              "link": "https://factum-group.bitrix24.eu/company/personal/user/52/tasks/task/view/8479/"
+            },
+            {
+              "month": "2026-09",
+              "text": "Переезд из amoCRM в Битрикс24 + мессенджеры и телефония — 23.09",
+              "status": "progress",
+              "link": "https://factum-group.bitrix24.eu/company/personal/user/52/tasks/task/view/8509/"
+            }
+          ],
+          "facts": [
+            {
+              "month": "2026-09",
+              "date": "14.09",
+              "kind": "progress",
+              "text": "Playbook дилера сдан на приёмку директору"
+            }
+          ]
+        },
+        {
+          "band": "Страны"
+        },
+        {
+          "name": "Украина",
+          "market": true,
+          "goal": "",
+          "items": []
+        },
+        {
+          "name": "Молдова",
+          "market": true,
+          "goal": "",
+          "items": []
+        },
+        {
+          "name": "Польша",
+          "market": true,
+          "goal": "",
+          "items": []
+        }
+      ]
+    }
+  ]
+}
