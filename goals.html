@@ -112,6 +112,7 @@
   col.c-goal { width: 260px; }
   td.unit { font-size: 14px; font-weight: 700; vertical-align: top; border-right: 1px solid var(--border);
             background: color-mix(in srgb, var(--surface-1) 70%, var(--page)); }
+  td.unit .note { font-size: 11.5px; font-weight: 400; color: var(--text-muted); margin-top: 3px; line-height: 1.35; }
   td.unit .n { font-size: 11px; font-weight: 600; color: var(--text-muted); letter-spacing: 0.06em; margin-bottom: 3px; }
   tr.unit-start td { border-top: 2px solid var(--grid); }
   tr.band td { padding: 5px 12px; font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase;
@@ -166,6 +167,8 @@ const LIVE = {};
 function render(data) {
   document.body.dataset.mode = MODE;
   document.querySelectorAll('.chip.fl').forEach(e => e.style.display = MODE === 'fact' ? '' : 'none');
+  if (data.title) { document.querySelector('h1').textContent = data.title; document.title = data.title + ' · Factum Group Tracking'; }
+  if (data.kicker) document.querySelector('.kicker').innerHTML = '<a href="index.html">Factum Group Tracking</a> · ' + esc(data.kicker);
   const cur = data.current, months = data.months;
   const curLabel = months.find(m => m.id === cur)?.label || '';
   document.getElementById('sub').textContent = `${curLabel} — текущий месяц · обновлено ${data.updated}`;
@@ -193,7 +196,7 @@ function render(data) {
     const deps = u.departments;
     deps.forEach((d, i) => {
       const first = i === 0;
-      const unitCell = first ? `<td class="unit" rowspan="${deps.length}"><div class="n">ОТДЕЛ ${ui + 1}</div>${esc(u.name)}${u.link ? `<br><a class="ulink" href="${esc(u.link)}">${u.lock ? '🔒 ' : ''}Аналитика →</a>` : ''}${(u.live && u.live.length) ? `<div class="now">${u.live.map(([id, lbl]) => `<div><div class="nv" id="live-${id}">${LIVE[id] ?? '—'}</div><div class="nl">${esc(lbl)}</div></div>`).join('')}</div>` : ''}</td>` : '';
+      const unitCell = first ? `<td class="unit" rowspan="${deps.length}"><div class="n">ОТДЕЛ ${ui + 1}</div>${esc(u.name)}${u.note ? `<div class="note">${esc(u.note)}</div>` : ''}${u.link ? `<br><a class="ulink" href="${esc(u.link)}">${u.lock ? '🔒 ' : ''}Аналитика →</a>` : ''}${(u.live && u.live.length) ? `<div class="now">${u.live.map(([id, lbl]) => `<div><div class="nv" id="live-${id}">${LIVE[id] ?? '—'}</div><div class="nl">${esc(lbl)}</div></div>`).join('')}</div>` : ''}</td>` : '';
       if (d.band) { rows += `<tr class="band${first ? ' unit-start' : ''}">${unitCell}<td colspan="${2 + months.length}">${esc(d.band)}</td></tr>`; return; }
       const goal = d.goal ? esc(d.goal) : '<span class="empty">цель не задана</span>';
       const note = d.note ? `<div class="note">${esc(d.note)}</div>` : '';
@@ -209,7 +212,8 @@ document.getElementById('seg').addEventListener('click', e => {
   MODE = b.dataset.mode; document.querySelectorAll('#seg button').forEach(x => x.classList.toggle('on', x === b));
   if (DATA) render(DATA);
 });
-fetch('goals.json', { cache: 'no-store' })
+const PAGE = new URLSearchParams(location.search).get('p') || '';
+fetch(PAGE === 'oex' ? 'goals-oex.json' : 'goals.json', { cache: 'no-store' })
   .then(r => { if (!r.ok) throw new Error(r.status); return r.json(); })
   .then(d => { DATA = d; render(d); })
   .catch(() => {
@@ -262,9 +266,26 @@ window.__gvH8 = t => {  // Лист8 — HR Битрикс24: менеджеро
     if (rows.length) setLive('hr-mgr', rows[rows.length - 1][1]);
   } catch (e) { console.log(e); }
 };
-gvLoad('Лист1', '__gvM', 'A1:C300');
-gvLoad('Лист3', '__gvS', 'A1:M10');
-gvLoad('Лист8', '__gvH8', 'A1:C400');
+window.__gvB = t => {  // Лист2 — «Аналитика B2B»: куплено авто дилерами в текущем месяце (ВСЕГО или сумма направлений)
+  try {
+    const cm = new Date().getMonth() + 1; let cur = null;
+    for (const row of gvRows(t)) {
+      const a = String(row[0] || '').trim();
+      if (a) { const m = monthOf(a); cur = (m && a.toUpperCase().indexOf('ФАКТ') > -1) ? m : null; }
+      if (cur === cm && String(row[1] || '').trim() === 'Покупки') {
+        const c = num(row[2]), d = num(row[3]), e = num(row[4]);
+        setLive('oex-buy', c != null ? c : ((d != null || e != null) ? (d || 0) + (e || 0) : null));
+      }
+    }
+  } catch (e) { console.log(e); }
+};
+if (PAGE === 'oex') {
+  gvLoad('Лист2', '__gvB', 'A1:E300');
+} else {
+  gvLoad('Лист1', '__gvM', 'A1:C300');
+  gvLoad('Лист3', '__gvS', 'A1:M10');
+  gvLoad('Лист8', '__gvH8', 'A1:C400');
+}
 </script>
 </body>
 </html>
