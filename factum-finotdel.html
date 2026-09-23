@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Финотдел · Factum Group Tracking</title>
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
+<style>
+  :root {
+    color-scheme: light;
+    --page: #f9f9f7; --surface-1: #fcfcfb;
+    --text-primary: #0b0b0b; --text-secondary: #52514e; --text-muted: #898781;
+    --border: rgba(11,11,11,0.10); --grid: #e1e0d9; --baseline: #c3c2b7;
+    --series-1: #2a78d6; --series-1-lt: #86b6ef; --series-2: #eb6834; --series-3: #1baf7a;
+    --bad: #d64550;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:where(:not([data-theme="light"])) {
+      color-scheme: dark;
+      --page: #0d0d0d; --surface-1: #1a1a19;
+      --text-primary: #ffffff; --text-secondary: #c3c2b7; --text-muted: #898781;
+      --border: rgba(255,255,255,0.10); --grid: #2c2c2a; --baseline: #383835;
+      --series-1: #3987e5; --series-1-lt: #6da7ec; --series-2: #d95926; --series-3: #199e70;
+      --bad: #e05561;
+    }
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: system-ui, -apple-system, "Segoe UI", sans-serif; background: var(--page);
+         color: var(--text-primary); min-height: 100vh; padding: 24px 24px 40px; }
+  .wrap { max-width: 980px; margin: 0 auto; }
+  .back { font-size: 13px; color: var(--series-1); text-decoration: none; }
+  .back:hover { text-decoration: underline; }
+  h1 { font-size: 22px; font-weight: 700; margin-top: 8px; display: flex; align-items: center; gap: 10px; }
+  .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--series-3); flex: none; }
+  .sub { margin: 6px 0 18px; font-size: 13px; color: var(--text-secondary); }
+  h2 { font-size: 15px; font-weight: 650; margin: 20px 0 10px; }
+  .card { background: var(--surface-1); border: 1px solid var(--border); border-radius: 14px;
+          padding: 16px 18px 14px; margin-bottom: 12px; }
+  .metrics { display: flex; gap: 28px; flex-wrap: wrap; margin-bottom: 10px; }
+  .metric { min-width: 150px; }
+  .metric-label { font-size: 12px; color: var(--text-secondary); margin-bottom: 3px; }
+  .metric-value { font-size: 30px; line-height: 1.05; font-weight: 600; }
+  .metric-note { font-size: 12px; color: var(--text-muted); margin-top: 3px; }
+  .muted { color: var(--text-muted); }
+  .good { color: var(--series-3); }
+  .chart-title { font-size: 12px; color: var(--text-muted); margin: 4px 0 6px; }
+  .chart svg { display: block; width: 100%; height: auto; }
+  .note { font-size: 13px; color: var(--text-secondary); margin-top: 10px; line-height: 1.45; }
+  table.dep { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .dep th { text-align: left; font-size: 11px; color: var(--text-muted); font-weight: 600;
+            padding: 6px 8px; border-bottom: 1px solid var(--grid); }
+  .dep th.num, .dep td.num { text-align: right; font-variant-numeric: tabular-nums; }
+  .dep td { padding: 6px 8px; border-bottom: 1px solid var(--grid); }
+  .dep tr:last-child td { border-bottom: none; }
+  .dep tr.total td { font-weight: 750; border-top: 2px solid var(--baseline); }
+  /* парольный экран */
+  #gate { max-width: 380px; margin: 12vh auto 0; text-align: center; }
+  #gate .card { padding: 26px 24px; }
+  #gate h1 { justify-content: center; }
+  #gate input { font: inherit; width: 100%; padding: 10px 12px; margin: 14px 0 10px; border-radius: 10px;
+                border: 1px solid var(--border); background: var(--page); color: var(--text-primary); }
+  #gate button { font: inherit; font-weight: 600; width: 100%; padding: 10px; border-radius: 10px; border: none;
+                 background: var(--series-1); color: #fff; cursor: pointer; }
+  #gate button:disabled { opacity: .6; cursor: default; }
+  #gate .err { color: var(--bad); font-size: 13px; margin-top: 10px; min-height: 18px; }
+
+  .wrap { max-width: 1180px; }
+  .tabs { display: flex; gap: 6px; flex-wrap: wrap; margin: 6px 0 16px; }
+  .tabs button { font: inherit; font-size: 13px; font-weight: 600; padding: 7px 13px; border-radius: 10px; border: 1px solid var(--border);
+                 background: var(--surface-1); color: var(--text-secondary); cursor: pointer; }
+  .tabs button.on { background: var(--series-1); color: #fff; border-color: var(--series-1); }
+  section { display: none; } section.on { display: block; }
+  .seg { display: inline-flex; border: 1px solid var(--border); border-radius: 9px; overflow: hidden; margin-left: auto; }
+  .seg button { font: inherit; font-size: 12px; font-weight: 600; padding: 5px 10px; border: 0; background: transparent; color: var(--text-secondary); cursor: pointer; }
+  .seg button.on { background: color-mix(in srgb, var(--series-1) 14%, var(--surface-1)); color: var(--series-1); }
+  .seg button:disabled { opacity: .5; cursor: default; }
+  .row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+  .bad { color: var(--bad); }
+  .pill { display: inline-block; font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 999px; white-space: nowrap; }
+  .pill.ok { background: color-mix(in srgb, var(--series-3) 14%, transparent); color: var(--series-3); }
+  .pill.no { background: color-mix(in srgb, var(--bad) 14%, transparent); color: var(--bad); }
+  .pill.wait { background: color-mix(in srgb, var(--series-2) 14%, transparent); color: var(--series-2); }
+  .pill.gray { background: var(--grid); color: var(--text-secondary); }
+  .bar { height: 6px; border-radius: 3px; background: var(--grid); position: relative; min-width: 120px; }
+  .bar i { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 3px; background: var(--series-3); }
+  .bar i.neg { background: var(--bad); }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  @media (max-width: 900px) { .grid2 { grid-template-columns: 1fr; } }
+  .src { font-size: 11px; color: var(--text-muted); margin-top: 8px; line-height: 1.4; }
+  .tbl { overflow-x: auto; }
+</style>
+</head>
+<body>
+<div id="gate">
+  <div class="card">
+    <h1><span class="dot"></span>Финотдел</h1>
+    <div class="sub" style="margin-bottom:0">Раздел защищён — введите пароль</div>
+    <input id="pw" type="password" autocomplete="current-password" placeholder="Пароль">
+    <button id="go">Открыть</button>
+    <div class="err" id="err"></div>
+  </div>
+</div>
+<div class="wrap" id="app" hidden>
+  <a class="back" href="goals.html">← Отделы и цели</a><a class="back" href="index.html" style="margin-left:16px">⌂ На главную</a><a class="back" href="factum-auto-finance.html" style="margin-left:16px">Штат и ФОТ →</a>
+  <h1><span class="dot"></span>Финотдел</h1>
+  <div class="sub" id="sub">…</div>
+  <div class="tabs" id="tabs">
+    <button class="on" data-t="pulse">Пульс</button><button data-t="be">Безубыточность</button><button data-t="eff">Эффективность</button>
+    <button data-t="fot">ФОТ</button><button data-t="ads">Реклама</button><button data-t="calc">Калькуляторы</button><button data-t="tasks">Задачи финотдела</button>
+  </div>
+  <section id="pulse" class="on">
+    <div class="card"><div class="metrics" id="kpi"></div></div>
+    <div class="card">
+      <div class="row"><h2 style="margin:0">Помесячно</h2><span class="seg" id="segu"><button class="on" data-m="u">с учредительскими</button><button data-m="nu">без учредительских</button></span></div>
+      <div class="tbl"><table class="dep" style="margin-top:10px"><thead><tr><th>Месяц</th><th class="num">Доход</th><th class="num">Расход</th><th class="num">Прибыль</th><th></th><th class="num">Авто</th><th class="num">Ср. маржа</th></tr></thead><tbody id="mrows"></tbody></table></div>
+      <div class="src" id="src-pulse"></div>
+    </div>
+  </section>
+  <section id="be">
+    <div class="card"><div class="metrics" id="be-kpi"></div></div>
+    <div class="card">
+      <h2 style="margin-top:0">План расходов по подразделениям (без бонусов)</h2>
+      <div class="tbl"><table class="dep"><thead><tr><th>Подразделение</th><th class="num">Ставки</th><th class="num">Аренда</th><th class="num">Реклама</th><th class="num">Всего/мес</th><th class="num">Прибыль факт</th><th>Покрытие</th></tr></thead><tbody id="be-rows"></tbody></table></div>
+      <div class="src" id="src-be"></div>
+    </div>
+  </section>
+  <section id="eff">
+    <div class="grid2">
+      <div class="card"><h2 style="margin-top:0" id="eff-title"></h2>
+        <div class="tbl"><table class="dep"><thead><tr><th>Подразделение</th><th class="num">Доход</th><th class="num">Расход</th><th class="num">Прибыль</th><th class="num">ROI</th></tr></thead><tbody id="eff-rows"></tbody></table></div>
+        <div class="src" id="src-eff"></div></div>
+      <div class="card"><h2 style="margin-top:0" id="top-title"></h2>
+        <div class="tbl"><table class="dep"><thead><tr><th>#</th><th>Менеджер</th><th class="num">Доход</th><th class="num">Прибыль</th><th class="num">Рент.</th></tr></thead><tbody id="top-rows"></tbody></table></div>
+        <div class="src" id="src-top"></div></div>
+    </div>
+  </section>
+  <section id="fot">
+    <div class="card"><div class="metrics" id="fot-kpi"></div>
+      <div class="bar" style="height:10px"><i id="fot-bar" style="width:0%"></i></div>
+      <div class="note" id="fot-note"></div></div>
+  </section>
+  <section id="ads">
+    <div class="card"><h2 style="margin-top:0" id="ads-title"></h2>
+      <div class="tbl"><table class="dep"><thead><tr><th>Страна</th><th class="num">Лидов</th><th class="num">Расход, $</th><th class="num">$/лид</th><th class="num">Динамика $/лид</th></tr></thead><tbody id="ads-rows"></tbody></table></div>
+      <div class="src" id="src-ads"></div></div>
+  </section>
+  <section id="calc">
+    <div class="card"><div class="row"><h2 style="margin:0">Матрица калькуляторов</h2><span id="calc-flag" style="margin-left:auto"></span></div>
+      <div class="tbl"><table class="dep" style="margin-top:10px"><thead><tr><th>Маршрут</th><th class="num">Менеджеру</th><th class="num">С/с сейчас</th><th class="num">Маржа</th><th class="num">Было</th><th class="num">С/с было</th><th class="num">Δ цены</th></tr></thead><tbody id="calc-rows"></tbody></table></div>
+      <div class="src" id="src-calc"></div></div>
+  </section>
+  <section id="tasks">
+    <div class="card"><div class="tbl"><table class="dep"><thead><tr><th>Задача</th><th>№</th><th>Срок</th><th>Статус</th></tr></thead><tbody id="task-rows"></tbody></table></div>
+      <div class="src" id="src-tasks"></div></div>
+  </section>
+</div>
+
+<script>
+const SHEET_ID = '10sbvUaWDkrJJqIC7ciuSsci21GuRMUV5P2TBhZCTF8U';
+const SALT = 'fgt-fin-salt-v1';
+const ITER = 10000;
+const enc = new TextEncoder();
+function gvLoad(sheet, cb) {
+  const s = document.createElement('script');
+  s.src = 'https://docs.google.com/spreadsheets/d/' + SHEET_ID + '/gviz/tq?sheet=' + encodeURIComponent(sheet) +
+    '&tqx=out:json;responseHandler:' + cb + '&t=' + Date.now();
+  document.head.appendChild(s);
+}
+const BLOBS = { dept: null, fot: null };
+function parseBlob(t) {
+  const rows = (t.table && t.table.rows ? t.table.rows : []).map(r => (r.c||[]).map(c => c && c.v));
+  if (rows.length >= 2 && String(rows[0][0]||'').trim() === 'v1' && String(rows[0][1]||'').length > 8 &&
+      String(rows[0][2]||'').length > 20 && String(rows[1][0]||'').length > 100)
+    return { nonce: String(rows[0][1]), tag: String(rows[0][2]), date: rows[0][3], ct: String(rows[1][0]) };
+  return null;
+}
+window.__gvF15 = t => { try { BLOBS.dept = parseBlob(t); } catch (e) { BLOBS.dept = null; }
+  document.getElementById('err').textContent = BLOBS.dept ? '' : 'Данные Финотдела ещё не выгружены — первая выгрузка идёт автоматически, попробуйте через 10 минут.';
+  autoUnlock(); };
+window.__gvF14 = t => { try { BLOBS.fot = parseBlob(t); } catch (e) { BLOBS.fot = null; } };
+
+async function hmac(keyBytes, msg) {
+  const k = await crypto.subtle.importKey('raw', keyBytes, { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
+  return new Uint8Array(await crypto.subtle.sign('HMAC', k, typeof msg === 'string' ? enc.encode(msg) : msg));
+}
+async function kdf(pass) { let k = enc.encode(SALT); const msg = enc.encode(pass); for (let i = 0; i < ITER; i++) k = await hmac(k, msg); return k; }
+function b64d(s) { const bin = atob(s); const a = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) a[i] = bin.charCodeAt(i); return a; }
+function b64eq(a, b) { return a.length === b.length && a.every((x, i) => x === b[i]); }
+async function open(blob, key) {
+  const macKey = await hmac(key, 'mac');
+  const tag = await hmac(macKey, blob.nonce + '|' + blob.ct);
+  if (!b64eq(tag, b64d(blob.tag))) return null;
+  const encKey = await hmac(key, 'enc');
+  const ct = b64d(blob.ct); const pt = new Uint8Array(ct.length);
+  for (let b = 0; b * 32 < ct.length; b++) { const ks = await hmac(encKey, blob.nonce + ':' + b); for (let j = 0; j < 32 && b * 32 + j < ct.length; j++) pt[b * 32 + j] = ct[b * 32 + j] ^ ks[j]; }
+  return JSON.parse(new TextDecoder().decode(pt));
+}
+let tried = false;
+async function autoUnlock() { if (tried) return; let pw = ''; try { pw = sessionStorage.getItem('fgt_fin_pw') || ''; } catch (e) {} if (pw && BLOBS.dept) { tried = true; document.getElementById('pw').value = pw; unlock(); } }
+async function unlock() {
+  const err = document.getElementById('err'), btn = document.getElementById('go');
+  if (!BLOBS.dept) { err.textContent = 'Данных пока нет — первая выгрузка идёт автоматически, попробуйте через 10 минут.'; return; }
+  btn.disabled = true; err.textContent = 'Проверяю…';
+  try {
+    const pass = document.getElementById('pw').value;
+    const key = await kdf(pass);
+    const d = await open(BLOBS.dept, key);
+    if (!d) { err.textContent = 'Неверный пароль.'; btn.disabled = false; return; }
+    let f = null; if (BLOBS.fot) { try { f = await open(BLOBS.fot, key); } catch (e) {} }
+    try { sessionStorage.setItem('fgt_fin_pw', pass); } catch (e) {}
+    render(d, f);
+  } catch (e) { console.log(e); err.textContent = 'Ошибка расшифровки.'; btn.disabled = false; }
+}
+
+const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const f = v => (v == null || v === '') ? '—' : Math.round(v).toLocaleString('ru-RU').replace(/\u00a0/g, ' ').replace(/,/g, ' ');
+const fs = v => (v == null) ? '—' : (v < 0 ? '−' : '+') + f(Math.abs(v));
+const f1 = v => (v == null) ? '—' : String(Math.round(v * 10) / 10).replace('.', ',');
+const mln = v => (Math.round(v / 10000) / 100).toFixed(2).replace('.', ',') + ' млн ₴';
+const $ = id => document.getElementById(id);
+
+function render(D, F) {
+  $('gate').hidden = true; $('app').hidden = false;
+  $('sub').textContent = `Данные финдиректора · последний закрытый месяц — ${D.monthLabel} · выгрузка ${D.asof}` + (D.live && D.live.sheets ? ' · таблицы читаются напрямую' : ' · снимок таблиц от ' + (D.snapDate || '—') + ', доступ к таблицам ещё не выдан');
+  const p = D.pulse, j = p.last;
+  $('kpi').innerHTML = `
+    <div class="metric"><div class="metric-label">Доход · ${esc(j.label)}</div><div class="metric-value">${f(j.inc)} $</div><div class="metric-note">розница ${f(j.incRetail)} · ОПТ ${f(j.incOpt)}</div></div>
+    <div class="metric"><div class="metric-label">Расход · ${esc(j.label)}</div><div class="metric-value">${f(j.exp)} $</div><div class="metric-note">в т.ч. учредительские ${f(j.uchr)}</div></div>
+    <div class="metric"><div class="metric-label">Прибыль · ${esc(j.label)}</div><div class="metric-value ${j.profit < 0 ? 'bad' : 'good'}">${fs(j.profit)} $</div><div class="metric-note">без учредительских: <b class="${j.profit + j.uchr < 0 ? 'bad' : 'good'}">${fs(j.profit + j.uchr)}</b></div></div>
+    <div class="metric"><div class="metric-label">Авто · ${esc(j.label)}</div><div class="metric-value">${f(j.cars)}</div><div class="metric-note">${f(j.carsRetail)} розн + ${f(j.carsOpt)} ОПТ · ср. маржа розн ${f(j.marginRetail)} $</div></div>`;
+  const maxAbs = Math.max(...p.months.map(m => Math.abs(m.profit + ((p.uchr || {})[m.ym] || 0))), 1);
+  const mrows = mode => p.months.map(m => { const u = (p.uchr || {})[m.ym]; const pu = (mode === 'nu' && u) ? m.profit + u : m.profit; const w = Math.min(100, Math.abs(pu) / maxAbs * 100);
+    return `<tr><td>${esc(m.ym)}</td><td class="num">${f(m.inc)}</td><td class="num">${f(m.exp)}</td><td class="num ${pu < 0 ? 'bad' : 'good'}">${fs(pu)}</td><td><div class="bar"><i class="${pu < 0 ? 'neg' : ''}" style="width:${w.toFixed(0)}%"></i></div></td><td class="num">${f(m.cars)}</td><td class="num">${f(m.margin)}</td></tr>`; }).join('');
+  $('mrows').innerHTML = mrows('u');
+  $('segu').onclick = e => { const b = e.target.closest('button'); if (!b) return; $('segu').querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b)); $('mrows').innerHTML = mrows(b.dataset.m); };
+  $('src-pulse').textContent = p.src || '';
+  const b = D.be, effMap = {}; (D.eff.rows || []).forEach(r => effMap[r.name] = r.profit);
+  $('be-kpi').innerHTML = `
+    <div class="metric"><div class="metric-label">Точка безубыточности (без бонусов)</div><div class="metric-value">${f(b.total + b.adm + b.taxUA)} $</div><div class="metric-note">расходы подразделений ${f(b.total)} + хоз/админ ${f(b.adm)} + налоги UA ${f(b.taxUA)}</div></div>
+    <div class="metric"><div class="metric-label">Маржа · ${esc(j.label)} факт</div><div class="metric-value">${f(b.marginFact)} $</div><div class="metric-note">бонусы и учредительские сверху</div></div>
+    <div class="metric"><div class="metric-label">Целевая планка собственника</div><div class="metric-value">${esc(b.ownerTarget)}</div><div class="metric-note">${esc(b.ownerNote || '')}</div></div>`;
+  $('be-rows').innerHTML = b.rows.map(r => { const pr = effMap[r.effName || r.name]; const ok = pr != null && pr > 0;
+    return `<tr><td>${esc(r.name)}</td><td class="num">${f(r.rate)}</td><td class="num">${f(r.rent)}</td><td class="num">${f(r.ads)}</td><td class="num"><b>${f(r.total)}</b></td><td class="num ${pr < 0 ? 'bad' : ''}">${pr == null ? '—' : fs(pr)}</td><td>${pr == null ? '' : `<span class="pill ${ok ? 'ok' : 'no'}">${ok ? 'покрывает' : 'не покрывает'}</span>`}</td></tr>`; }).join('')
+    + (b.missing ? `<tr><td class="muted" colspan="7">${esc(b.missing)}</td></tr>` : '')
+    + `<tr class="total"><td>Итого</td><td class="num">${f(b.sumRate)}</td><td class="num">${f(b.sumRent)}</td><td class="num">${f(b.sumAds)}</td><td class="num">${f(b.total)}</td><td class="num ${j.profit < 0 ? 'bad' : ''}">${fs(j.profit)}</td><td></td></tr>`;
+  $('src-be').textContent = b.src || '';
+  const e = D.eff;
+  $('eff-title').textContent = 'Подразделения · ' + e.label;
+  $('eff-rows').innerHTML = e.rows.map(r => `<tr><td>${esc(r.name)}</td><td class="num">${f(r.inc)}</td><td class="num">${f(r.exp)}</td><td class="num ${r.profit < 0 ? 'bad' : ''}">${fs(r.profit)}</td><td class="num">${r.roi == null ? '—' : String(Math.round(r.roi * 100) / 100).replace('.', ',')}</td></tr>`).join('')
+    + `<tr class="total"><td>Итого</td><td class="num">${f(e.total.inc)}</td><td class="num">${f(e.total.exp)}</td><td class="num ${e.total.profit < 0 ? 'bad' : ''}">${fs(e.total.profit)}</td><td></td></tr>`;
+  $('top-title').textContent = 'ТОП-10 менеджеров · ' + e.label;
+  $('top-rows').innerHTML = e.top.map((r, i) => `<tr><td class="muted">${i + 1}</td><td>${esc(r.name)}</td><td class="num">${f(r.inc)}</td><td class="num">${f(r.profit)}</td><td class="num">${f1(r.pct)}%</td></tr>`).join('');
+  $('src-eff').textContent = e.src || ''; $('src-top').textContent = e.topNote || '';
+  const t = D.fot;
+  const cur = F && F.cur ? F.cur.uah : t.base_uah, nxt = F && F.next ? F.next.uah : t.next_uah, fx = F && F.fx ? F.fx : t.fx;
+  const prog = Math.max(0, Math.min(100, (t.base_uah - nxt) / (t.base_uah - (t.target_lo + t.target_hi) / 2) * 100));
+  $('fot-kpi').innerHTML = `
+    <div class="metric"><div class="metric-label">Фикс-ФОТ без СТО · сейчас</div><div class="metric-value">${mln(cur)}</div><div class="metric-note">${fx ? f(cur / fx) + ' $ по курсу ' + f1(fx) : ''}</div></div>
+    <div class="metric"><div class="metric-label">С 1-го числа</div><div class="metric-value">${mln(nxt)}</div><div class="metric-note">снято увольнениями ${f(cur - nxt)} ₴</div></div>
+    <div class="metric"><div class="metric-label">Целевая планка</div><div class="metric-value">${(t.target_lo / 1e6).toFixed(1).replace('.', ',')}–${(t.target_hi / 1e6).toFixed(1).replace('.', ',')} млн ₴</div><div class="metric-note">ещё −${mln(nxt - (t.target_lo + t.target_hi) / 2)}</div></div>
+    <div class="metric"><div class="metric-label">Полный ФОТ · ${esc(t.fullLabel)}</div><div class="metric-value">${f(t.full.total)} тыс. $</div><div class="metric-note">ставки ${t.full.rates} · KPI ${t.full.kpi} · бонусы ${t.full.bonus}</div></div>`;
+  $('fot-bar').style.width = prog.toFixed(0) + '%';
+  $('fot-note').innerHTML = `Шкала: путь от точки отсчёта ${mln(t.base_uah)} к планке — пройдено ${prog.toFixed(0)}%. ${F ? 'Текущие цифры — живые, из раздела «Штат и ФОТ».' : 'Живые цифры подтянутся из раздела «Штат и ФОТ» после его выгрузки.'} <a class="back" href="factum-auto-finance.html">Открыть «Штат и ФОТ» →</a>`;
+  const a = D.ads;
+  $('ads-title').textContent = 'Лиды и цена лида · ' + a.label;
+  $('ads-rows').innerHTML = a.rows.map(r => `<tr><td>${esc(r.country)}</td><td class="num">${f(r.leads)}</td><td class="num">${f(r.spend)}</td><td class="num"><b>${f1(r.cpl)}</b></td><td class="num muted">${r.cplPrev == null ? '—' : f1(r.cplPrev) + ' → ' + f1(r.cpl)}</td></tr>`).join('')
+    + `<tr class="total"><td>Итого</td><td class="num">${f(a.total.leads)}</td><td class="num">${f(a.total.all)}</td><td class="num">${f1(a.total.all / a.total.leads)}</td><td class="num muted">${a.prev ? f1(a.prev.all / a.prev.leads) + ' → ' + f1(a.total.all / a.total.leads) : ''}</td></tr>`;
+  $('src-ads').textContent = a.src || '';
+  const c = D.calc;
+  $('calc-flag').innerHTML = c.confirmed ? '<span class="pill ok">тарифы подтверждены</span>' : `<span class="pill wait">${esc(c.flag || 'тарифы ждут подтверждения')}</span>`;
+  $('calc-rows').innerHTML = c.rows.map(r => `<tr><td>${esc(r.route)}${r.kind === 'min' ? ' <span class="pill gray">норматив маржи</span>' : ''}</td><td class="num">${f(r.mgr)}</td><td class="num">${f(r.cost)}</td><td class="num"><b>${f(r.margin)}</b>${r.kind === 'min' ? '+' : ''}</td><td class="num muted">${f(r.oldPrice)}</td><td class="num muted">${f(r.oldCost)}</td><td class="num ${r.delta ? 'good' : ''}">${r.delta ? fs(r.delta) : '—'}</td></tr>`).join('');
+  $('src-calc').textContent = c.src || '';
+  const st = { 2: ['ждёт', 'gray'], 3: ['в работе', 'wait'], 4: ['на приёмке', 'wait'], 5: ['закрыта', 'ok'], 6: ['отложена', 'gray'] };
+  $('task-rows').innerHTML = (D.tasks || []).map(x => { const s = st[x.status] || ['—', 'gray']; const over = x.status < 5 && x.due && x.dueTs && x.dueTs < Date.now();
+    return `<tr><td><a class="back" href="https://factum-group.bitrix24.eu/company/personal/user/52/tasks/task/view/${x.id}/" target="_blank" rel="noopener">${esc(x.title)}</a></td><td class="muted">#${x.id}</td><td>${esc(x.due || '—')}</td><td><span class="pill ${over ? 'no' : s[1]}">${over ? 'просрочена · ' + s[0] : s[0]}</span></td></tr>`; }).join('') || '<tr><td colspan="4" class="muted">задачи не подгрузились</td></tr>';
+  $('src-tasks').textContent = 'Проект «Финотдел» в Битрикс24, ответственный Александр Холявицкий. Обновляется при каждой выгрузке.';
+}
+$('tabs').addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return;
+  document.querySelectorAll('#tabs button').forEach(x => x.classList.toggle('on', x === b));
+  document.querySelectorAll('section').forEach(s => s.classList.toggle('on', s.id === b.dataset.t)); });
+$('go').addEventListener('click', unlock);
+$('pw').addEventListener('keydown', e => { if (e.key === 'Enter') unlock(); });
+gvLoad('Лист15', '__gvF15');
+gvLoad('Лист14', '__gvF14');
+</script>
+</body>
+</html>
