@@ -501,7 +501,7 @@ window.__gvB16 = t => {  // Битрикс24: Дата | UA | MD | PL | GE | AM 
       d: dstr(r[0]), c: [num(r[1]), num(r[2]), num(r[3]), num(r[4]), num(r[5]), num(r[6])].map(num2),
       now: num(r[7]), mql: num2(num(r[8])), sql: num2(num(r[9])),
       neu: num2(num(r[10])), dep: num2(num(r[11])), cl: num2(num(r[12])), cold: num2(num(r[13])),
-      over: num(r[14]), noact: num(r[15]), at: String(r[16] || ''), src: 'bx' }))
+      over: num(r[14]), noact: num(r[15]), at: tstr(r[16]), src: 'bx' }))
       .filter(r => /^\d{4}-\d{2}-\d{2}$/.test(r.d) && typeof r.now === 'number');
     if (!rows.length) return;
     rows.sort((a, b) => a.d < b.d ? -1 : 1);
@@ -509,6 +509,11 @@ window.__gvB16 = t => {  // Битрикс24: Дата | UA | MD | PL | GE | AM 
   } catch (e) { console.log(e); }
 };
 function num2(v) { return typeof v === 'number' ? v : 0; }
+function tstr(v) {  // «18:45» из строки или из Date(1899,11,30,18,45,0)
+  if (v instanceof Date) return String(v.getHours()).padStart(2, '0') + ':' + String(v.getMinutes()).padStart(2, '0');
+  const m = String(v || '').match(/^Date\(\d+,\d+,\d+,(\d+),(\d+)/);
+  return m ? m[1].padStart(2, '0') + ':' + m[2].padStart(2, '0') : String(v || '');
+}
 function mergeWarm() {
   const bx = window.WBX || [], amo = window.WAMO || [];
   if (!bx.length && !amo.length) return;
@@ -617,7 +622,7 @@ window.__gvA17 = t => {
   try {
     const rows = gvRows(t).map(r => {
       let top = []; try { top = JSON.parse(r[7] || '[]'); } catch (e) {}
-      return { d: dstr(r[0]), self: num(r[1]), other: num(r[2]), done: num(r[3]), calls: num(r[4]), over: num(r[5]), open: num(r[6]), top, at: String(r[8] || '') };
+      return { d: dstr(r[0]), self: num(r[1]), other: num(r[2]), done: num(r[3]), calls: num(r[4]), over: num(r[5]), open: num(r[6]), top, at: tstr(r[8]) };
     }).filter(r => /^\d{4}-\d{2}-\d{2}$/.test(r.d) && typeof r.self === 'number');
     if (!rows.length) return;
     rows.sort((a, b) => a.d < b.d ? -1 : 1);
