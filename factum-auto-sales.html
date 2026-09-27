@@ -131,13 +131,13 @@
     <div class="note">«＋» у страны раскрывает её отделы. Новые отделы подтягиваются автоматически. «С депозитами» — менеджеры, давшие хотя бы один депозит за месяц (результат из «Менеджеры отчет»); численность штата — это метрика «Менеджеров работает» выше, она из HR Битрикс24. Покупки в этой разбивке — из «Аналитики продаж месячной» (могут отставать от «Общего зачета» на день-два).</div>
   </section>
 
-  <h2>Тёплые лиды</h2>
+  <h2>Тёплые лиды · Битрикс24</h2>
   <section class="card">
     <div class="metrics">
       <div class="metric">
         <div class="metric-label">Тёплых сейчас</div>
         <div class="metric-value" id="wm-now">—</div>
-        <div class="metric-note" id="wm-now-note">Украина, Молдова, Казахстан, Грузия — amoCRM («готов в ближ. месяц» → «выслан договор») · Польша и Армения — Битрикс24 (стадии «MQL — тёплый» и «SQL — горячий»)</div>
+        <div class="metric-note" id="wm-now-note">MQL — тёплый · SQL — горячий</div>
       </div>
       <div class="metric">
         <div class="metric-label" id="wm-new-l">Новых тёплых</div>
@@ -156,64 +156,68 @@
       <div class="metric">
         <div class="metric-label" id="wm-cold-l">Из тёплых → в холод</div>
         <div class="metric-value" id="wm-cold">—</div>
-        <div class="metric-note" id="wm-cold-pct">вернулись на более ранний этап · учёт с 03.09</div>
+        <div class="metric-note" id="wm-cold-pct">вернулись на более ранний этап</div>
       </div>
     </div>
     <div class="tabs" id="wmm-tabs" hidden></div>
-    <div class="chart-title" id="wm-byc-title" hidden>Тёплые по странам · сейчас</div>
+    <div class="chart-title" id="wm-byc-title" hidden>Тёплые по странам · сейчас <span class="muted" id="wm-byc-when"></span></div>
     <div class="dept-mini" id="wm-byc"></div>
+    <div class="chart-title" id="wm-acts-title" hidden style="margin-top:14px">Дела по тёплым сделкам · сейчас</div>
+    <div class="dept-mini" id="wm-acts"></div>
     <div class="tabs" id="wm-tabs">
       <button class="on" data-mode="d">По дням</button>
       <button data-mode="w">По неделям</button>
       <button data-mode="m">По месяцам</button>
     </div>
-    <div class="chart-title" id="wm-chart-title">По дням: новые тёплые, переходы в депозит и в закрыто (история копится с 20.08.2026)</div>
+    <div class="chart-title" id="wm-chart-title">По дням: новые тёплые, переходы в депозит и в закрыто</div>
     <div class="chart" id="wm-chart"></div>
-    <div class="note">Метрики исходов (новые тёплые, → депозит, → закрыто, → в холод) и графики считаются по событиям amoCRM — для Польши и Армении, перешедших в Битрикс24, они больше не пополняются.</div>
+    <div class="note">Страна сделки — по региону ответственного менеджера в структуре Битрикс24 («Прочие» — пресейл и сотрудники вне региональных отделов). Исходы считаются по движению сделок между срезами (каждые полчаса): ушла на «Депозит» и дальше — «→ депозит», в «Deal lost»/«Отложено» — «→ закрыто», вернулась на «MQL»/«Call» и раньше — «→ в холод». Учёт по Битрикс24 — с 27.09.2026; до этого на графике — архив amoCRM (Украина, Молдова, Казахстан, Грузия).</div>
   </section>
 
-  <h2>Задачи · amoCRM</h2>
+  <h2>Дела · Битрикс24</h2>
   <section class="card">
     <div class="metrics">
       <div class="metric">
-        <div class="metric-label">Менеджеры · создано сегодня</div>
+        <div class="metric-label">Менеджеры · дел создано сегодня</div>
         <div class="metric-value" id="tk-hum">—</div>
-        <div class="metric-note" id="tk-hum-note"></div>
+        <div class="metric-note" id="tk-hum-note">поставили сами себе</div>
       </div>
       <div class="metric">
-        <div class="metric-label">ИИ-система · создано сегодня</div>
+        <div class="metric-label">Поставлено другими · сегодня</div>
         <div class="metric-value" id="tk-ai">—</div>
-        <div class="metric-note" id="tk-ai-note"></div>
+        <div class="metric-note" id="tk-ai-note">лидген, РОП, роботы</div>
       </div>
       <div class="metric">
-        <div class="metric-label">Телефония (авто) · сегодня</div>
+        <div class="metric-label">Выполнено из созданных</div>
+        <div class="metric-value" id="tk-done">—</div>
+        <div class="metric-note" id="tk-done-note"></div>
+      </div>
+      <div class="metric">
+        <div class="metric-label">Телефония · звонков сегодня</div>
         <div class="metric-value muted" id="tk-tel">—</div>
-        <div class="metric-note">задачи-карточки звонков, справочно</div>
+        <div class="metric-note">карточки звонков, справочно</div>
       </div>
       <div class="metric">
         <div class="metric-label">Просрочено сейчас</div>
         <div class="metric-value" id="tk-over">—</div>
-        <div class="metric-note">открытые задачи с истёкшим сроком</div>
+        <div class="metric-note" id="tk-over-note">открытые дела с истёкшим сроком</div>
       </div>
     </div>
     <div class="tabs" id="tk-tabs">
       <button class="on" data-p="d">Дни</button>
       <button data-p="w">Недели</button>
       <button data-p="m">Месяцы</button>
-      <button data-p="q">90 дней</button>
     </div>
-    <div class="chart-title" id="tkh-title">Задачи менеджеров · создано и их текущая судьба</div>
+    <div class="chart-title" id="tkh-title">Дела по сделкам · создано за день</div>
     <div class="chart" id="tkh-chart"><span class="muted" style="font-size:13px">Загрузка…</span></div>
-    <div class="chart-title" id="tka-title" style="margin-top:16px">Задачи ИИ-системы · создано и их текущая судьба</div>
-    <div class="chart" id="tka-chart"><span class="muted" style="font-size:13px">Загрузка…</span></div>
-    <div class="chart-title" style="margin-top:18px">Кто из менеджеров создаёт задачи · <span id="tkc-day">—</span></div>
+    <div class="chart-title" style="margin-top:18px">Кто из менеджеров ведёт дела · <span id="tkc-day">—</span></div>
     <div class="tabs" id="tkc-tabs">
       <button class="on" data-p="d">День</button>
       <button data-p="w">7 дней</button>
       <button data-p="m">Месяц</button>
     </div>
-    <div id="tkc-top"><span class="muted" style="font-size:13px">Разбивка по создателям появится в течение дня.</span></div>
-    <div class="note">«Выполнено / перенесено / удалено» — текущее состояние задач, созданных в период (пересчёт 2 раза в час). Автозадачи телефонии в графики не входят — их количество за сегодня показано цифрой выше. История судьбы задач — с 03.09, по создателям — с 10.09: недели и месяцы наполняются по мере накопления.</div>
+    <div id="tkc-top"><span class="muted" style="font-size:13px">Разбивка по ответственным появится в течение дня.</span></div>
+    <div class="note">Дела — записи «Дело» (CRM_TODO) по сделкам Битрикс24; звонки телефонии считаются отдельно. «Поставлено другими» — дело создано не тем, кто за него отвечает (лидген передал клиента, руководитель поставил задачу, робот). Срез обновляется каждые полчаса, история — с 27.09.2026.</div>
   </section>
 
   <h2>Аналитика продаж в ретроспективе</h2>
@@ -481,73 +485,67 @@ function renderSalesMain() {
 window.__gvM = t => {
   try { window.LF = parseFacts(gvRows(t)); renderSalesMain(); renderDepts(window.LF); } catch (e) { console.log(e); }
 };
-window.__gvW = t => {
+// ===== Тёплые лиды: Битрикс24 (Лист16) + архив amoCRM (Лист5) для истории до 27.09.2026 =====
+// Унифицированная строка: { d, now, neu, dep, cl, cold, src: 'bx'|'amo' }
+window.WAMO = null; window.WBX = null;
+window.__gvW = t => {   // архив amoCRM: Дата | тёплых | новых | →деп | →закр | UA MD PL KZ GE AM | →холод
   try {
-    const rows = gvRows(t).map(r => {
-      let d = r[0];
-      if (d instanceof Date) {
-        d = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
-      } else {
-        d = String(d).trim();
-        const dm = d.match(/^Date\((\d+),(\d+),(\d+)/);
-        if (dm) d = dm[1] + '-' + String(+dm[2] + 1).padStart(2, '0') + '-' + String(+dm[3]).padStart(2, '0');
-      }
-      return [d, num(r[1]), num(r[2]), num(r[3]), num(r[4]),
-              num(r[5]), num(r[6]), num(r[7]), num(r[8]), num(r[9]), num(r[10]), num(r[11])];
-    }).filter(r => /^\d{4}-\d{2}-\d{2}$/.test(r[0]));
-    if (!rows.length) return;
-    rows.sort((a, b) => a[0] < b[0] ? -1 : 1);
-    const last = rows[rows.length - 1];
-    window.WLAST = last;
-    renderWarmNow();
-    window.WROWS = rows;
-    // вкладки календарных месяцев для метрик
-    const yms = [...new Set(rows.map(r => String(r[0]).slice(0, 7)))].sort().slice(-6);
-    const tabs = document.getElementById('wmm-tabs');
-    tabs.innerHTML = yms.map(ym =>
-      `<button data-ym="${ym}">${MON_FULL[+ym.slice(5, 7) - 1]}</button>`).join('');
-    tabs.hidden = yms.length < 2;
-    renderWarmMetrics(yms[yms.length - 1]);
-    renderWarm(window.WMODE || 'd');
+    const rows = gvRows(t).map(r => ({ d: dstr(r[0]), now: num(r[1]), neu: num(r[2]) || 0, dep: num(r[3]) || 0, cl: num(r[4]) || 0, cold: num(r[11]) || 0, src: 'amo' }))
+      .filter(r => /^\d{4}-\d{2}-\d{2}$/.test(r.d));
+    window.WAMO = rows; mergeWarm();
   } catch (e) { console.log(e); }
 };
-function renderWarmNow() {
-  const last = window.WLAST; if (!last) return;
-  const bx = window.BX13 || null;
-  // amo-порядок: UA, MD, PL, KZ, GE, AM
-  const cv = last.slice(5, 11);
-  const names = ['Украина', 'Молдова', 'Польша', 'Казахстан', 'Грузия', 'Армения'];
-  const vals = cv.slice();
-  const b24i = [2, 5]; // PL, AM
-  if (bx) { vals[2] = bx.pl; vals[5] = bx.am; }
-  if (vals.some(v => typeof v === 'number')) {
-    document.getElementById('wm-byc-title').hidden = false;
-    document.getElementById('wm-byc').innerHTML = names.map((n, i) =>
-      `<div class="mini"><div class="mini-label">${n}${bx && b24i.includes(i) ? ' · Б24' : ''}</div><div class="mini-value">${vals[i] ?? '—'}</div></div>`).join('');
-  }
-  let total = last[1];
-  if (bx && typeof total === 'number') {
-    total = total - (num2(cv[2]) + num2(cv[5])) + bx.pl + bx.am;
-  }
-  document.getElementById('wm-now').textContent = total ?? '—';
-}
+window.__gvB16 = t => {  // Битрикс24: Дата | UA | MD | PL | GE | AM | Прочие | Всего | MQL | SQL | Новых | →деп | →закр | →холод | просроч. дел | без дел | обновлено
+  try {
+    const rows = gvRows(t).map(r => ({
+      d: dstr(r[0]), c: [num(r[1]), num(r[2]), num(r[3]), num(r[4]), num(r[5]), num(r[6])].map(num2),
+      now: num(r[7]), mql: num2(num(r[8])), sql: num2(num(r[9])),
+      neu: num2(num(r[10])), dep: num2(num(r[11])), cl: num2(num(r[12])), cold: num2(num(r[13])),
+      over: num(r[14]), noact: num(r[15]), at: String(r[16] || ''), src: 'bx' }))
+      .filter(r => /^\d{4}-\d{2}-\d{2}$/.test(r.d) && typeof r.now === 'number');
+    if (!rows.length) return;
+    rows.sort((a, b) => a.d < b.d ? -1 : 1);
+    window.WBX = rows; renderWarmNow(); mergeWarm();
+  } catch (e) { console.log(e); }
+};
 function num2(v) { return typeof v === 'number' ? v : 0; }
-window.__gvB = t => {
-  try {
-    const rows = gvRows(t).map(r => [dstr(r[0]), num(r[1]), num(r[2]), num(r[3])])
-      .filter(r => /^\d{4}-\d{2}-\d{2}$/.test(r[0]));
-    if (!rows.length) return;
-    rows.sort((a, b) => a[0] < b[0] ? -1 : 1);
-    const L = rows[rows.length - 1];
-    window.BX13 = { date: L[0], md: num2(L[1]), pl: num2(L[2]), am: num2(L[3]) };
-    renderWarmNow();
-  } catch (e) { console.log(e); }
-};
+function mergeWarm() {
+  const bx = window.WBX || [], amo = window.WAMO || [];
+  if (!bx.length && !amo.length) return;
+  const first = bx.length ? bx[0].d : '9999';
+  const rows = amo.filter(r => r.d < first).concat(bx).sort((a, b) => a.d < b.d ? -1 : 1);
+  window.WROWS = rows;
+  const yms = [...new Set(rows.map(r => r.d.slice(0, 7)))].sort().slice(-6);
+  const tabs = document.getElementById('wmm-tabs');
+  tabs.innerHTML = yms.map(ym => `<button data-ym="${ym}">${MON_FULL[+ym.slice(5, 7) - 1]}</button>`).join('');
+  tabs.hidden = yms.length < 2;
+  renderWarmMetrics(yms[yms.length - 1]);
+  renderWarm(window.WMODE || 'd');
+}
+function renderWarmNow() {
+  const bx = window.WBX; if (!bx || !bx.length) return;
+  const L = bx[bx.length - 1];
+  document.getElementById('wm-now').textContent = L.now;
+  document.getElementById('wm-now-note').textContent = `MQL — тёплый ${L.mql} · SQL — горячий ${L.sql}`;
+  const names = ['Украина', 'Молдова', 'Польша', 'Грузия', 'Армения', 'Прочие'];
+  document.getElementById('wm-byc-title').hidden = false;
+  document.getElementById('wm-byc-when').textContent = L.at ? '· срез ' + L.d.slice(8, 10) + '.' + L.d.slice(5, 7) + ' ' + L.at : '';
+  document.getElementById('wm-byc').innerHTML = names.map((n, i) =>
+    `<div class="mini"><div class="mini-label">${n}</div><div class="mini-value">${L.c[i]}</div></div>`).join('');
+  if (typeof L.over === 'number' || typeof L.noact === 'number') {
+    const pct = v => L.now ? ` <span class="muted" style="font-size:13px;font-weight:500">· ${Math.round(v * 100 / L.now)}%</span>` : '';
+    document.getElementById('wm-acts-title').hidden = false;
+    document.getElementById('wm-acts').innerHTML =
+      `<div class="mini"><div class="mini-label">С просроченным делом</div><div class="mini-value" style="color:${L.over ? 'var(--bad)' : 'inherit'}">${L.over ?? '—'}${pct(L.over || 0)}</div></div>` +
+      `<div class="mini"><div class="mini-label">Без единого дела</div><div class="mini-value" style="color:${L.noact ? 'var(--bad)' : 'inherit'}">${L.noact ?? '—'}${pct(L.noact || 0)}</div></div>` +
+      `<div class="mini"><div class="mini-label">В работе с делом в срок</div><div class="mini-value">${Math.max(0, L.now - (L.over || 0) - (L.noact || 0))}</div></div>`;
+  }
+}
 function renderWarmMetrics(ym) {
   const rows = window.WROWS || []; if (!rows.length || !ym) return;
   document.querySelectorAll('#wmm-tabs button').forEach(b => b.classList.toggle('on', b.dataset.ym === ym));
-  let neu = 0, dep = 0, cl = 0, cold = 0;
-  rows.forEach(r => { if (String(r[0]).slice(0, 7) === ym) { neu += r[2] || 0; dep += r[3] || 0; cl += r[4] || 0; cold += r[11] || 0; } });
+  let neu = 0, dep = 0, cl = 0, cold = 0, mixed = false;
+  rows.forEach(r => { if (r.d.slice(0, 7) === ym) { neu += r.neu; dep += r.dep; cl += r.cl; cold += r.cold; if (r.src === 'amo') mixed = true; } });
   const mn = MON_FULL[+ym.slice(5, 7) - 1].toLowerCase();
   document.getElementById('wm-new-l').textContent = 'Новых тёплых · ' + mn;
   document.getElementById('wm-dep-l').textContent = 'Из тёплых → депозит · ' + mn;
@@ -560,7 +558,7 @@ function renderWarmMetrics(ym) {
   const out = dep + cl + cold;
   document.getElementById('wm-dep-pct').textContent = out > 0 ? Math.round(dep / out * 100) + '% исходов' : '';
   document.getElementById('wm-cl-pct').textContent = out > 0 ? Math.round(cl / out * 100) + '% исходов' : '';
-  document.getElementById('wm-cold-pct').textContent = (out > 0 ? Math.round(cold / out * 100) + '% исходов · ' : '') + 'учёт с 03.09';
+  document.getElementById('wm-cold-pct').textContent = (out > 0 ? Math.round(cold / out * 100) + '% исходов · ' : '') + (mixed ? 'до 27.09 — amoCRM' : 'Битрикс24');
 }
 document.getElementById('wmm-tabs').addEventListener('click', e => {
   const b = e.target.closest('button'); if (b) renderWarmMetrics(b.dataset.ym);
@@ -568,28 +566,25 @@ document.getElementById('wmm-tabs').addEventListener('click', e => {
 const MON3 = ['Янв','Фев','Мар','Апр','Май','Июн','Июл','Авг','Сен','Окт','Ноя','Дек'];
 function warmGroups(rows, mode) {
   const dl = d => d.slice(8, 10) + '.' + d.slice(5, 7);
-  if (mode === 'd') {
-    const days = rows.slice(-21);
-    return days.map(r => ({ label: dl(r[0]), neu: r[2] || 0, dep: r[3] || 0, cl: r[4] || 0, cold: r[11] || 0, now: r[1] }));
-  }
+  if (mode === 'd') return rows.slice(-21).map(r => ({ label: dl(r.d) + (r.src === 'amo' ? '*' : ''), neu: r.neu, dep: r.dep, cl: r.cl, cold: r.cold, now: r.now }));
   const g = new Map();
   for (const r of rows) {
     let key, label;
     if (mode === 'w') {
-      const d = new Date(r[0] + 'T12:00:00');
+      const d = new Date(r.d + 'T12:00:00');
       const mon = new Date(d); mon.setDate(d.getDate() - ((d.getDay() + 6) % 7));
       const sun = new Date(mon); sun.setDate(mon.getDate() + 6);
       const f = x => String(x.getDate()).padStart(2,'0') + '.' + String(x.getMonth()+1).padStart(2,'0');
       key = mon.toISOString().slice(0, 10);
       label = f(mon) + '–' + f(sun);
     } else {
-      key = r[0].slice(0, 7);
-      label = MON3[+r[0].slice(5, 7) - 1];
+      key = r.d.slice(0, 7);
+      label = MON3[+r.d.slice(5, 7) - 1];
     }
     if (!g.has(key)) g.set(key, { label, neu: 0, dep: 0, cl: 0, cold: 0, now: null });
     const o = g.get(key);
-    o.neu += r[2] || 0; o.dep += r[3] || 0; o.cl += r[4] || 0; o.cold += r[11] || 0;
-    if (typeof r[1] === 'number') o.now = r[1]; // уровень на конец периода
+    o.neu += r.neu; o.dep += r.dep; o.cl += r.cl; o.cold += r.cold;
+    if (typeof r.now === 'number') o.now = r.now;
   }
   return [...g.keys()].sort().map(k => g.get(k)).slice(-12);
 }
@@ -598,10 +593,11 @@ function renderWarm(mode) {
   const rows = window.WROWS || [];
   if (!rows.length) return;
   document.querySelectorAll('#wm-tabs button').forEach(b => b.classList.toggle('on', b.dataset.mode === mode));
+  const hasAmo = rows.some(r => r.src === 'amo');
   const T = {
-    d: 'По дням: новые тёплые, переходы в депозит и в закрыто (история копится с 20.08.2026)',
+    d: 'По дням: новые тёплые, переходы в депозит и в закрыто' + (hasAmo ? ' (* — дни по данным amoCRM)' : ''),
     w: 'По неделям: суммы за неделю · в скобках у подписи — тёплых на конец недели',
-    m: 'По месяцам: суммы за месяц (август — с 20.08) · в скобках — тёплых на конец месяца',
+    m: 'По месяцам: суммы за месяц · в скобках — тёплых на конец месяца' + (hasAmo ? ' · до 27.09 — amoCRM' : ''),
   };
   document.getElementById('wm-chart-title').textContent = T[mode];
   const gs = warmGroups(rows, mode);
@@ -616,148 +612,88 @@ function renderWarm(mode) {
 document.getElementById('wm-tabs').addEventListener('click', e => {
   const b = e.target.closest('button'); if (b) renderWarm(b.dataset.mode);
 });
-window.__gvT = t => {
+// ===== Дела Битрикс24 (Лист17): Дата | себе | другими | выполнено | звонки | просрочено | открытых | топ JSON | обновлено =====
+window.__gvA17 = t => {
   try {
     const rows = gvRows(t).map(r => {
-      let d = r[0];
-      if (d instanceof Date) {
-        d = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
-      } else {
-        d = String(d).trim();
-        const dm = d.match(/^Date\((\d+),(\d+),(\d+)/);
-        if (dm) d = dm[1] + '-' + String(+dm[2] + 1).padStart(2, '0') + '-' + String(+dm[3]).padStart(2, '0');
-      }
-      return [d, num(r[1]), num(r[2]), num(r[3]), num(r[4])];
-    }).filter(r => /^\d{4}-\d{2}-\d{2}$/.test(r[0]));
+      let top = []; try { top = JSON.parse(r[7] || '[]'); } catch (e) {}
+      return { d: dstr(r[0]), self: num(r[1]), other: num(r[2]), done: num(r[3]), calls: num(r[4]), over: num(r[5]), open: num(r[6]), top, at: String(r[8] || '') };
+    }).filter(r => /^\d{4}-\d{2}-\d{2}$/.test(r.d) && typeof r.self === 'number');
     if (!rows.length) return;
-    rows.sort((a, b) => a[0] < b[0] ? -1 : 1);
-    const last = rows[rows.length - 1];
-    document.getElementById('tk-over').textContent = last[3] ?? '—';
-  } catch (e) { console.log(e); }
-};
-window.__gvF = t => {
-  try {
-    const rows = gvRows(t).map(r => {
-      let d = r[0];
-      if (d instanceof Date) {
-        d = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
-      } else {
-        d = String(d).trim();
-        const dm = d.match(/^Date\((\d+),(\d+),(\d+)/);
-        if (dm) d = dm[1] + '-' + String(+dm[2] + 1).padStart(2, '0') + '-' + String(+dm[3]).padStart(2, '0');
-      }
-      return [d, ...r.slice(1, 10).map(num)];
-    }).filter(r => /^\d{4}-\d{2}-\d{2}$/.test(r[0]));
-    if (!rows.length) return;
-    rows.sort((a, b) => a[0] < b[0] ? -1 : 1);
+    rows.sort((a, b) => a.d < b.d ? -1 : 1);
+    const L = rows[rows.length - 1];
     const nowD = new Date();
     const todayStr = nowD.getFullYear() + '-' + String(nowD.getMonth() + 1).padStart(2, '0') + '-' + String(nowD.getDate()).padStart(2, '0');
-    const last = rows[rows.length - 1];
-    if (last[0] === todayStr) {
-      const tot = (last[2] ?? 0) + (last[6] ?? 0) + (last[1] ?? 0);
-      document.getElementById('tk-hum').textContent = last[2] ?? '—';
-      document.getElementById('tk-hum-note').textContent = tot ? Math.round((last[2] || 0) * 100 / tot) + '% всех созданных' : '';
-      document.getElementById('tk-ai').textContent = last[6] ?? '—';
-      document.getElementById('tk-ai-note').textContent = tot ? Math.round((last[6] || 0) * 100 / tot) + '% всех созданных' : '';
-      document.getElementById('tk-tel').textContent = last[1] ?? '—';
+    const tot = (L.self || 0) + (L.other || 0);
+    if (L.d === todayStr) {
+      document.getElementById('tk-hum').textContent = L.self;
+      document.getElementById('tk-hum-note').textContent = 'поставили сами себе' + (tot ? ' · ' + Math.round(L.self * 100 / tot) + '% всех' : '');
+      document.getElementById('tk-ai').textContent = L.other;
+      document.getElementById('tk-done').textContent = L.done;
+      document.getElementById('tk-done-note').textContent = tot ? Math.round(L.done * 100 / tot) + '% дел, созданных сегодня' : '';
+      document.getElementById('tk-tel').textContent = L.calls;
     } else {
       document.getElementById('tk-hum-note').textContent = 'срез за сегодня появится в течение получаса';
     }
+    document.getElementById('tk-over').textContent = L.over ?? '—';
+    document.getElementById('tk-over-note').textContent = 'открытых дел всего ' + (L.open ?? '—') + (L.at ? ' · срез ' + L.at : '');
     window.TKROWS = rows;
     renderTasks(window.TKMODE || 'd');
+    renderCreators(window.CMODE || 'd');
   } catch (e) { console.log(e); }
 };
 function tkGroups(rows, mode) {
   const dl = d => d.slice(8, 10) + '.' + d.slice(5, 7);
-  const sum9 = (o, r) => { for (let i = 1; i <= 9; i++) o.v[i] = (o.v[i] || 0) + (r[i] || 0); };
-  if (mode === 'd') return rows.slice(-14).map(r => { const o = { label: dl(r[0]), v: [] }; sum9(o, r); return o; });
-  let src = rows, take = 12;
-  if (mode === 'q') {
-    const cut = new Date(Date.now() - 90 * 86400000).toISOString().slice(0, 10);
-    src = rows.filter(r => r[0] >= cut); take = 14;
-  }
+  const add = (o, r) => { o.self += r.self || 0; o.other += r.other || 0; o.done += r.done || 0; o.calls += r.calls || 0; };
+  const mk = label => ({ label, self: 0, other: 0, done: 0, calls: 0 });
+  if (mode === 'd') return rows.slice(-14).map(r => { const o = mk(dl(r.d)); add(o, r); return o; });
   const g = new Map();
-  for (const r of src) {
+  for (const r of rows) {
     let key, label;
-    if (mode === 'm') {
-      key = r[0].slice(0, 7); label = MON3[+r[0].slice(5, 7) - 1];
-    } else {
-      const d = new Date(r[0] + 'T12:00:00');
+    if (mode === 'm') { key = r.d.slice(0, 7); label = MON3[+r.d.slice(5, 7) - 1]; }
+    else {
+      const d = new Date(r.d + 'T12:00:00');
       const mon = new Date(d); mon.setDate(d.getDate() - ((d.getDay() + 6) % 7));
       const sun = new Date(mon); sun.setDate(mon.getDate() + 6);
       const f = x => String(x.getDate()).padStart(2, '0') + '.' + String(x.getMonth() + 1).padStart(2, '0');
       key = mon.toISOString().slice(0, 10); label = f(mon) + '–' + f(sun);
     }
-    if (!g.has(key)) g.set(key, { label, v: [] });
-    sum9(g.get(key), r);
+    if (!g.has(key)) g.set(key, mk(label));
+    add(g.get(key), r);
   }
-  return [...g.keys()].sort().map(k => g.get(k)).slice(-take);
+  return [...g.keys()].sort().map(k => g.get(k)).slice(-12);
 }
 function renderTasks(mode) {
   window.TKMODE = mode;
   const rows = window.TKROWS || []; if (!rows.length) return;
   document.querySelectorAll('#tk-tabs button').forEach(b => b.classList.toggle('on', b.dataset.p === mode));
-  const suf = { d: 'по дням (14)', w: 'по неделям', m: 'по месяцам', q: 'последние 90 дней · по неделям' }[mode];
-  document.getElementById('tkh-title').textContent = 'Задачи менеджеров · ' + suf + ' · создано и их текущая судьба';
-  document.getElementById('tka-title').textContent = 'Задачи ИИ-системы · ' + suf;
+  const suf = { d: 'по дням (14)', w: 'по неделям', m: 'по месяцам' }[mode];
+  document.getElementById('tkh-title').textContent = 'Дела по сделкам · ' + suf + ' · создано и выполнено (звонки телефонии не входят)';
   const gs = tkGroups(rows, mode);
-  const labels = gs.map(o => o.label);
-  const S = (i, lbl, col) => ({ label: lbl, vals: gs.map(o => o.v[i] ?? null), color: col });
-  document.getElementById('tkh-chart').innerHTML = groupedColumns(labels, [
-    S(2, 'Создано', 'var(--series-1)'), S(3, 'Выполнено', 'var(--series-3)'),
-    S(4, 'Перенесено', 'var(--series-2)'), S(5, 'Удалено', 'var(--bad)')]);
-  document.getElementById('tka-chart').innerHTML = groupedColumns(labels, [
-    S(6, 'Создано', 'var(--series-1)'), S(7, 'Выполнено', 'var(--series-3)'),
-    S(8, 'Перенесено', 'var(--series-2)'), S(9, 'Удалено', 'var(--bad)')]);
+  document.getElementById('tkh-chart').innerHTML = groupedColumns(gs.map(o => o.label), [
+    { label: 'Создали себе', vals: gs.map(o => o.self), color: 'var(--series-1)' },
+    { label: 'Поставлено другими', vals: gs.map(o => o.other), color: 'var(--series-2)' },
+    { label: 'Выполнено', vals: gs.map(o => o.done), color: 'var(--series-3)' }]);
 }
 document.getElementById('tk-tabs').addEventListener('click', e => {
   const b = e.target.closest('button'); if (b) renderTasks(b.dataset.p);
 });
-window.__gvCRows = null;
-window.__gvC = t => {
-  try {
-    const rows = gvRows(t).map(r => {
-      let d = r[0];
-      if (d instanceof Date) {
-        d = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
-      } else {
-        d = String(d).trim();
-        const dm = d.match(/^Date\((\d+),(\d+),(\d+)/);
-        if (dm) d = dm[1] + '-' + String(+dm[2] + 1).padStart(2, '0') + '-' + String(+dm[3]).padStart(2, '0');
-      }
-      return { d, id: num(r[1]), name: String(r[2] || ''), c: num(r[3]) };
-    }).filter(r => /^\d{4}-\d{2}-\d{2}$/.test(r.d) && r.c > 0 && r.id !== 0);
-    if (!rows.length) return;
-    window.CROWS = rows;
-    renderCreators(window.CMODE || 'd');
-  } catch (e) { console.log(e); }
-};
 function renderCreators(mode) {
   window.CMODE = mode;
-  const all = window.CROWS; if (!all || !all.length) return;
+  const all = window.TKROWS; if (!all || !all.length) return;
   document.querySelectorAll('#tkc-tabs button').forEach(b => b.classList.toggle('on', b.dataset.p === mode));
-  const lastDay = all.map(r => r.d).sort().pop();
+  const lastDay = all[all.length - 1].d;
   const dl = d => d.slice(8, 10) + '.' + d.slice(5, 7);
   let rows, lbl;
-  if (mode === 'd') {
-    rows = all.filter(r => r.d === lastDay);
-    lbl = dl(lastDay) + '.' + lastDay.slice(0, 4);
-  } else if (mode === 'w') {
+  if (mode === 'd') { rows = all.filter(r => r.d === lastDay); lbl = dl(lastDay) + '.' + lastDay.slice(0, 4); }
+  else if (mode === 'w') {
     const from = new Date(new Date(lastDay + 'T12:00:00') - 6 * 86400000).toISOString().slice(0, 10);
-    rows = all.filter(r => r.d >= from && r.d <= lastDay);
-    lbl = dl(from) + '–' + dl(lastDay);
-  } else {
-    const ym = lastDay.slice(0, 7);
-    rows = all.filter(r => r.d.slice(0, 7) === ym);
-    lbl = MON_FULL[+ym.slice(5, 7) - 1].toLowerCase() + ' (с 10.09)';
-  }
+    rows = all.filter(r => r.d >= from && r.d <= lastDay); lbl = dl(from) + '–' + dl(lastDay);
+  } else { const ym = lastDay.slice(0, 7); rows = all.filter(r => r.d.slice(0, 7) === ym); lbl = MON_FULL[+ym.slice(5, 7) - 1].toLowerCase(); }
   document.getElementById('tkc-day').textContent = lbl;
   const by = new Map();
-  for (const r of rows) {
-    if (!by.has(r.id)) by.set(r.id, { name: r.name, c: 0 });
-    const o = by.get(r.id); o.c += r.c; o.name = r.name;
-  }
-  const list = [...by.values()].sort((a, b) => b.c - a.c);
+  for (const r of rows) for (const [name, c] of r.top) by.set(name, (by.get(name) || 0) + (c || 0));
+  const list = [...by.entries()].map(([name, c]) => ({ name, c })).sort((a, b) => b.c - a.c);
   if (!list.length) return;
   const hum = list.reduce((s, r) => s + r.c, 0);
   const top = list.slice(0, 15);
@@ -766,7 +702,7 @@ function renderCreators(mode) {
     '<tr><td style="padding:3px 8px 3px 0;white-space:nowrap">' + esc(r.name) + '</td>' +
     '<td style="width:45%;padding:3px 0"><div style="height:10px;border-radius:5px;background:var(--series-1);width:' + Math.max(2, Math.round(r.c * 100 / max)) + '%"></div></td>' +
     '<td style="padding:3px 0 3px 10px;text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums">' + r.c + ' <span class="muted">· ' + Math.round(r.c * 100 / (hum || 1)) + '%</span></td></tr>'
-  ).join('') + '</table>' + (list.length > 15 ? '<div class="muted" style="font-size:12px;margin-top:4px">Показан топ-15 из ' + list.length + ' · всего у менеджеров ' + hum + ' задач</div>' : '');
+  ).join('') + '</table>' + (list.length > 15 ? '<div class="muted" style="font-size:12px;margin-top:4px">Показан топ-15 из ' + list.length + ' · всего дел у ответственных ' + hum + '</div>' : '');
 }
 document.getElementById('tkc-tabs').addEventListener('click', e => {
   const b = e.target.closest('button'); if (b) renderCreators(b.dataset.p);
@@ -962,11 +898,9 @@ gvLoad('Лист1', '__gvHead', 'A1:S1');
 gvLoad('Лист3', '__gvS', 'A1:M10');
 gvLoad('Лист4', '__gvP', 'A1:D400');
 gvLoad('Лист5', '__gvW', 'A1:L400');
-gvLoad('Лист13', '__gvB', 'A1:F400');
+gvLoad('Лист16', '__gvB16', 'A1:Q400');
 gvLoad('Лист8', '__gvH8', 'A1:C400');
-gvLoad('Лист10', '__gvT', 'A1:E400');
-gvLoad('Лист11', '__gvC', 'A1:D3000');
-gvLoad('Лист12', '__gvF', 'A1:J100');
+gvLoad('Лист17', '__gvA17', 'A1:I400');
 </script>
 </body>
 </html>
