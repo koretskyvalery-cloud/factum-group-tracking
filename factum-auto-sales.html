@@ -96,6 +96,7 @@
       <div class="metric">
         <div class="metric-label">Депозиты (чистые)</div>
         <div class="metric-value" id="sd-net">—</div>
+        <div class="metric-note" id="sd-note"></div>
       </div>
       <div class="metric">
         <div class="metric-label">Покупки</div>
@@ -117,7 +118,7 @@
     </div>
     <div class="chart-title" id="pace-title">Темп месяца: накопительно с 1-го числа, день в день</div>
     <div class="chart" id="pace-chart"><span class="muted" style="font-size:13px">Загрузка…</span></div>
-    <div class="note" id="pace-note">Сопоставление темпов: сколько было на этот же день месяца в прошлые месяцы. История дневных снимков ведётся с 04.08.2026.</div>
+    <div class="note" id="pace-note">Сопоставление темпов: сколько было на этот же день месяца в прошлые месяцы. История дневных снимков ведётся с 04.08.2026. Последняя точка закрытого месяца — официальный итог из «Аналитики продаж» (возвраты, оформленные после снимка, уменьшают чистые депозиты).</div>
   </section>
 
   <section class="card">
@@ -306,9 +307,10 @@ function groupedColumns(labels, seriesArr) {
 }
 // разбор Лист1: факт-показатели по месяцам 2026 (+ разбивка по колонкам-отделам)
 function parseFacts(rows) {
-  const F = { mgr:{}, leads:{}, dep:{}, net:{}, buy:{}, crDep:{}, crBuy:{}, head:null, rows:{} };
+  const F = { mgr:{}, leads:{}, dep:{}, net:{}, buy:{}, crDep:{}, crBuy:{}, head:null, rows:{}, rowsM:{}, last:null };
   const cm = new Date().getMonth() + 1;
   let cur = null;
+  const keep = (m, k, row) => { (F.rowsM[m] = F.rowsM[m] || {})[k] = row; if (m === cm) F.rows[k] = row; if (!F.last || m > F.last) F.last = m; };
   for (const row of rows) {
     const a = String(row[0]||'').trim();
     if (a === 'Месяц') { F.head = row.map(v => String(v||'').trim()); continue; }
@@ -316,12 +318,12 @@ function parseFacts(rows) {
     if (!cur) continue;
     const crit = String(row[1]||'').trim();
     if (crit.startsWith('Возвраты Депоз')) F.ret = F.ret || {}, F.ret[cur] = num(row[2]);
-    else if (crit.startsWith('Менеджеры с деп')) { F.mgr[cur] = num(row[2]); if (cur === cm) F.rows.mgr = row; }
-    else if (crit === 'Лиды') { F.leads[cur] = num(row[2]); if (cur === cm) F.rows.leads = row; }
-    else if (crit.startsWith('Депозиты Факт')) { F.net[cur] = num(row[2]); if (cur === cm) F.rows.net = row; }
+    else if (crit.startsWith('Менеджеры с деп')) { F.mgr[cur] = num(row[2]); keep(cur, 'mgr', row); }
+    else if (crit === 'Лиды') { F.leads[cur] = num(row[2]); keep(cur, 'leads', row); }
+    else if (crit.startsWith('Депозиты Факт')) { F.net[cur] = num(row[2]); keep(cur, 'net', row); }
     else if (crit === 'Депозиты') F.dep[cur] = num(row[2]);
-    else if (crit === 'Покупки') { F.buy[cur] = num(row[2]); if (cur === cm) F.rows.buy = row; }
-    else if (crit.startsWith('CR из лида в деп')) { F.crDep[cur] = pct(row[2]); if (cur === cm) F.rows.crd = row; }
+    else if (crit === 'Покупки') { F.buy[cur] = num(row[2]); keep(cur, 'buy', row); }
+    else if (crit.startsWith('CR из лида в деп')) { F.crDep[cur] = pct(row[2]); keep(cur, 'crd', row); }
     else if (crit.startsWith('CR из лида в пок')) F.crBuy[cur] = pct(row[2]);
   }
   return F;
@@ -341,8 +343,15 @@ function deptCountry(name) {
   if (/yerevan|gyumri|ереван|гюмри|армен/.test(n)) return 'AM';
   return 'OTHER';
 }
-function renderDepts(F) {
-  if (!F || !F.rows || !F.rows.net) return;
+function renderDepts(F0) {
+  if (!F0 || !F0.rowsM) return;
+  const cmD = new Date().getMonth() + 1;
+  const useM = (F0.rows && F0.rows.net) ? cmD : F0.last;
+  if (!useM || !F0.rowsM[useM] || !F0.rowsM[useM].net) return;
+  const F = Object.assign({}, F0, { rows: F0.rowsM[useM] });
+  document.getElementById('dept-h').textContent = useM === cmD
+    ? 'По отделам · текущий месяц'
+    : 'По отделам · ' + MON_FULL[useM - 1].toLowerCase() + ' (закрытый месяц; ' + MON_FULL[cmD - 1].toLowerCase() + ' появится, когда его откроют в «Аналитике продаж»)';
   let head = window.DHEAD;
   if (!head || !String(head[3] || '').trim()) head = (F.head && String(F.head[3] || '').trim()) ? F.head : DHEAD_FALLBACK;
   const cell = (row, i) => row ? row[i] : null;
@@ -471,8 +480,12 @@ function renderSalesMain() {
   const sp = (window.SPER || {})[new Date().getFullYear()];
   const buyVals = sp ? sp.slice(0, cm).map(v => (typeof v === 'number' ? v : null)) : series(F.buy, cm);
   const buyNow = sp && typeof sp[cm - 1] === 'number' ? sp[cm - 1] : F.buy[cm];
-  if (F.net[cm] != null) document.getElementById('sd-net').textContent = F.net[cm];
-  if (buyNow != null) document.getElementById('sd-buy').textContent = buyNow;
+  const opened = F.net[cm] != null || F.dep[cm] != null;
+  document.getElementById('sd-net').textContent = opened ? F.net[cm] : 0;
+  document.getElementById('sd-buy').textContent = buyNow != null ? buyNow : 0;
+  const nm = document.getElementById('sd-note');
+  if (nm) nm.textContent = opened ? MON_FULL[cm - 1] + ' · «Аналитика продаж месячная»'
+    : MON_FULL[cm - 1].toLowerCase() + ' ещё не открыт в «Аналитике продаж месячной» — цифры появятся с первыми депозитами месяца';
   const months = MONTH_ABBR.slice(0, cm);
   document.getElementById('sd-chart').innerHTML = groupedColumns(months, [
     { label: 'Депозиты (всего)', vals: series(F.dep, cm), color: 'var(--series-1-lt)' },
@@ -481,6 +494,7 @@ function renderSalesMain() {
     { label: 'Возвраты', vals: series(F.ret || {}, cm), color: 'var(--series-2)' },
   ]);
   stampSub('Депозиты и покупки автомобилей');
+  if (window.PROWS) renderPace(window.PMODE || 2); // пересчитать «Темп месяца» с официальными итогами
 }
 window.__gvM = t => {
   try { window.LF = parseFacts(gvRows(t)); renderSalesMain(); renderDepts(window.LF); } catch (e) { console.log(e); }
@@ -824,6 +838,17 @@ function renderPace(k) {
   }
   const yms = [...byM.keys()].sort().slice(-3);
   if (!yms.length) return;
+  // закрытые месяцы: последняя точка = официальный итог месяца (возвраты после снимка уменьшают чистые депозиты)
+  const nowYm = new Date().getFullYear() + '-' + String(new Date().getMonth() + 1).padStart(2, '0');
+  const F0 = window.LF || {}, spY = (window.SPER || {})[new Date().getFullYear()];
+  for (const ym of yms) {
+    if (ym >= nowYm) continue;
+    const m = +ym.slice(5, 7);
+    const off = k === 1 ? (F0.dep || {})[m] : k === 2 ? (F0.net || {})[m] : (spY && typeof spY[m - 1] === 'number' ? spY[m - 1] : (F0.buy || {})[m]);
+    if (typeof off !== 'number') continue;
+    const pts = byM.get(ym).sort((a, b) => a.day - b.day);
+    pts[pts.length - 1] = { day: pts[pts.length - 1].day, v: off, official: true };
+  }
   const cur = yms[yms.length - 1];
   const markDay = Math.max(...byM.get(cur).map(p => p.day));
   const styles = [
@@ -840,7 +865,7 @@ function renderPace(k) {
   attachPaceHover(seriesArr);
   const cmp = yms.slice().reverse().map(ym => {
     const upto = byM.get(ym).filter(p => p.day <= markDay);
-    return upto.length ? MON_FULL[+ym.slice(5, 7) - 1] + ' — ' + upto[upto.length - 1].v : null;
+    return upto.length ? MON_FULL[+ym.slice(5, 7) - 1] + ' — ' + upto[upto.length - 1].v + (upto[upto.length - 1].official ? ' (итог месяца)' : '') : null;
   }).filter(Boolean);
   document.getElementById('pace-title').textContent =
     PACE_NAMES[k] + ', накопительно с 1-го числа · на ' + markDay + '-е число: ' + cmp.join(' · ');
@@ -857,7 +882,7 @@ function gvKeep(name, payload) {
 }
 (function () {
   const m0 = window.__gvM;
-  window.__gvM = (t, fc) => { m0(t); if (!fc && window.LF && window.LF.rows && window.LF.rows.net) gvKeep('__gvM', t); };
+  window.__gvM = (t, fc) => { m0(t); if (!fc && window.LF && Object.keys(window.LF.net || {}).length) gvKeep('__gvM', t); };
   const h0 = window.__gvHead;
   window.__gvHead = (t, fc) => { h0(t); if (!fc && window.DHEAD && String(window.DHEAD[3] || '').trim()) gvKeep('__gvHead', t); };
   const s1 = window.__gvS;
@@ -880,7 +905,7 @@ setTimeout(() => {
   }
   if (!GV_OK.__gvS && !window.SPER) { try { window.__gvS(SEED_L3, true); } catch (e) {} }
   let note = '';
-  if (window.LF && window.LF.rows && window.LF.rows.net) {
+  if (window.LF && Object.keys(window.LF.net || {}).length) {
     const d = ts ? new Date(ts) : null;
     note = d ? ('показаны последние сохранённые данные от ' + String(d.getDate()).padStart(2, '0') + '.' + String(d.getMonth() + 1).padStart(2, '0') + ' ' + String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0')) : 'показаны последние сохранённые данные';
   } else {
