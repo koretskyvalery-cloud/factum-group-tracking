@@ -557,15 +557,19 @@ function renderCard(p) {
     const dmap = {};
     deltas.forEach(r => { dmap[r.d] = r; });
     let dayRows = deltas;
-    if (Object.keys(BUYD).length) {
+    if (Object.keys(BUYD).length && deltas.length) {
+      // календарь от первого дня истории снимков до сегодня — без разрыва на стыке месяцев
       dayRows = [];
       const nowD2 = new Date();
-      const y2 = nowD2.getFullYear(), m2 = nowD2.getMonth() + 1;
-      for (let dd = 1; dd <= nowD2.getDate(); dd++) {
-        const ds = y2 + '-' + String(m2).padStart(2, '0') + '-' + String(dd).padStart(2, '0');
+      const todayS = nowD2.getFullYear() + '-' + String(nowD2.getMonth() + 1).padStart(2, '0') + '-' + String(nowD2.getDate()).padStart(2, '0');
+      const cur = new Date(deltas[0].d + 'T12:00:00');
+      for (let guard = 0; guard < 400; guard++) {
+        const ds = cur.getFullYear() + '-' + String(cur.getMonth() + 1).padStart(2, '0') + '-' + String(cur.getDate()).padStart(2, '0');
+        if (ds > todayS) break;
         const dm2 = dmap[ds];
         dayRows.push({ d: ds, gross: dm2 ? dm2.gross : null, net: dm2 ? dm2.net : null,
                        buy: BUYD[ds] || 0, ret: dm2 ? dm2.ret : null });
+        cur.setDate(cur.getDate() + 1);
       }
     }
     // дневная норма — план месяца, разложенный по рабочим дням
@@ -601,7 +605,7 @@ function renderCard(p) {
       hMetrics = SERIES4.map(s4 => ({ label: s4.label, color: s4.color,
         series: last.map(r => r[s4.key]), tips: last.map(tipFor(s4.key, s4.label)) }));
       labels = last.map(r => dayLabel(r.d));
-      chartTitle = 'Прирост за день · наведите на столбик — детали и % дневной нормы';
+      chartTitle = 'Прирост за день, последние 14 дней · наведите на столбик — детали и % дневной нормы';
     } else {
       const wks = weekAgg(dayRows);
       const wTip = (key, name) => r =>
@@ -610,6 +614,7 @@ function renderCard(p) {
         series: wks.map(r => r[s4.key]), tips: wks.map(wTip(s4.key, s4.label)) }));
       labels = wks.map(r => r.label);
       chartTitle = 'Прирост за неделю (пн–вс) · последняя — идёт';
+      if (wks.length > 10) { hMetrics.forEach(m => { m.series = m.series.slice(-10); m.tips = m.tips.slice(-10); }); labels = labels.slice(-10); }
     }
     chartHtml = renderChart({ metrics: hMetrics, months: labels, chartTitle });
     legendHtml = `<div class="legend">${hMetrics.map(m =>
@@ -759,11 +764,14 @@ function buildProjects(monthly, b2b, now) {
   const buyFact = (sp && sp[cm - 1] != null) ? sp[cm - 1] : (monthly['fact|' + cm + '|buy'] || 0);
   const buySeries = sp ? sp.slice(0, cm) : s('buy');
   const bMonths = Object.keys(b2b).map(Number).sort((a, b) => a - b);
+  // в первые дни месяца блока «<Месяц> Факт» в «Аналитике продаж» ещё нет — говорим об этом прямо, а не «план не задан»
+  const noMonth = monthly['fact|' + cm + '|dep'] == null && monthly['fact|' + cm + '|net'] == null && monthly['fact|' + cm + '|buy'] == null;
+  const nmNote = noMonth ? MONTH_FULL[cm - 1].toLowerCase() + ' ещё не открыт в «Аналитике продаж» — цифры появятся с первыми депозитами' : undefined;
   return [
     { name: 'Factum Auto', desc: 'Импорт авто под заказ', demo: false, span2: true, color: 'var(--series-1)',
       metrics: [
-        { label: 'Депозиты (чистые)', fact: netFact, plan: netPlan, series: s('net'), color: 'var(--series-1-lt)' },
-        { label: 'Покупки', fact: buyFact, plan: buyPlan, series: buySeries, color: 'var(--series-1)' },
+        { label: 'Депозиты (чистые)', fact: netFact, plan: netPlan, series: s('net'), color: 'var(--series-1-lt)', note: nmNote },
+        { label: 'Покупки', fact: buyFact, plan: buyPlan, series: buySeries, color: 'var(--series-1)', note: nmNote },
       ],
       chartMetrics: [
         { label: 'Депозиты (всего)', series: s('dep'), color: 'var(--series-1-lt)' },
@@ -858,8 +866,7 @@ function gvTryRender() {
     const monthly = parseMonthly(gvRows(gvResults.m));
     const cm = now.getMonth() + 1;
     // во время 5-минутного обновления IMPORTRANGE лист бывает пуст пару секунд — не рисуем нули
-    if (monthly['fact|' + cm + '|dep'] == null && monthly['fact|' + cm + '|buy'] == null &&
-        monthly['fact|' + cm + '|net'] == null) return;
+    if (!Object.keys(monthly).some(k => k.startsWith('fact|'))) return; // лист пуст целиком — ждём следующей загрузки
     LAST_MONTHLY = monthly;
     renderAll(buildProjects(monthly, parseB2B(gvRows(gvResults.b)), now));
     const t = String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0');
