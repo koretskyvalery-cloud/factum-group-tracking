@@ -61,6 +61,8 @@
   .metric-value.muted { color: var(--text-muted); }
   .chart-title { font-size: 12px; color: var(--text-muted); margin: 4px 0 6px; }
   .tabs { display: flex; gap: 8px; flex-wrap: wrap; margin: 4px 0 10px; }
+  .fn-controls { display: flex; gap: 10px 18px; flex-wrap: wrap; align-items: center; margin-bottom: 10px; }
+  .fn-select, .fn-date { font: inherit; font-size: 12.5px; padding: 4px 10px; border-radius: 8px; border: 1px solid var(--border); background: var(--surface-1); color: var(--text-primary); }
   .tabs button { font: inherit; font-size: 12.5px; padding: 4px 12px; border-radius: 999px;
                  border: 1px solid var(--border); background: transparent; color: var(--text-secondary); cursor: pointer; }
   .tabs button.on { background: color-mix(in srgb, var(--series-1) 12%, transparent);
@@ -173,6 +175,22 @@
     <div class="chart-title" id="wm-chart-title">По дням: новые тёплые, переходы в депозит и в закрыто</div>
     <div class="chart" id="wm-chart"></div>
     <div class="note">Страна сделки — по региону ответственного менеджера в структуре Битрикс24 («Прочие» — пресейл и сотрудники вне региональных отделов). Исходы считаются по движению сделок между срезами (каждые полчаса): ушла на «Депозит» и дальше — «→ депозит», в «Deal lost»/«Отложено» — «→ закрыто», вернулась на «MQL»/«Call» и раньше — «→ в холод». Учёт по Битрикс24 — с 27.09.2026; до этого на графике — архив amoCRM (Украина, Молдова, Казахстан, Грузия).</div>
+  </section>
+
+  <h2>Лиды → MQL+SQL → депозиты</h2>
+  <section class="card">
+    <div class="fn-controls">
+      <select id="fn-scope" class="fn-select"><option value="ALL">Весь отдел продаж (без пресейла)</option></select>
+      <div class="tabs" id="fn-mode" style="margin:0"><button class="on" data-v="tot">Всего</button><button data-v="pm">На менеджера</button></div>
+      <div class="tabs" id="fn-gran" style="margin:0"><button class="on" data-v="d">День</button><button data-v="w">Неделя</button><button data-v="m">Месяц</button></div>
+      <div class="tabs" id="fn-per" style="margin:0"><button class="on" data-v="7">7 дней</button><button data-v="30">Месяц</button><button data-v="60">2 мес</button><button data-v="90">3 мес</button><button data-v="c">Свои даты</button></div>
+      <span id="fn-custom" hidden><input type="date" id="fn-from" class="fn-date"> — <input type="date" id="fn-to" class="fn-date"></span>
+    </div>
+    <div class="chart-title" id="fn-title">Загрузка…</div>
+    <div class="chart" id="fn-chart"></div>
+    <div class="chart-title" style="margin-top:14px">Сравнение дня</div>
+    <div class="dept-mini" id="fn-cmp"></div>
+    <div class="note" id="fn-note">Лид — сделка, созданная в стадии «New Lead» воронки продаж Битрикс24 (возвраты из базы не считаются). MQL+SQL — сколько сделок в стадиях «MQL — тёплый» и «SQL — горячий» на конец дня. Депозиты — сделки, перешедшие в стадию «Депозит» за день. «На менеджера» — делим на численность отдела в этот день (учётки Битрикс24). По дням данные есть с 29.09.2026 (переход в Битрикс24); режим «Месяц» берёт август–октябрь из «Менеджеры отчет» (лиды, депозиты взятые, менеджеры с депозитами). Пунктир — та же серия неделей раньше, день недели в день недели.</div>
   </section>
 
   <h2>Дела · Битрикс24</h2>
@@ -321,7 +339,7 @@ function parseFacts(rows) {
     else if (crit.startsWith('Менеджеры с деп')) { F.mgr[cur] = num(row[2]); keep(cur, 'mgr', row); }
     else if (crit === 'Лиды') { F.leads[cur] = num(row[2]); keep(cur, 'leads', row); }
     else if (crit.startsWith('Депозиты Факт')) { F.net[cur] = num(row[2]); keep(cur, 'net', row); }
-    else if (crit === 'Депозиты') F.dep[cur] = num(row[2]);
+    else if (crit === 'Депозиты') { F.dep[cur] = num(row[2]); keep(cur, 'dep', row); }
     else if (crit === 'Покупки') { F.buy[cur] = num(row[2]); keep(cur, 'buy', row); }
     else if (crit.startsWith('CR из лида в деп')) { F.crDep[cur] = pct(row[2]); keep(cur, 'crd', row); }
     else if (crit.startsWith('CR из лида в пок')) F.crBuy[cur] = pct(row[2]);
@@ -495,6 +513,7 @@ function renderSalesMain() {
   ]);
   stampSub('Депозиты и покупки автомобилей');
   if (window.PROWS) renderPace(window.PMODE || 2); // пересчитать «Темп месяца» с официальными итогами
+  if (window.FN && FN.rows.length && FN.gran === 'm') renderFunnel();
 }
 window.__gvM = t => {
   try { window.LF = parseFacts(gvRows(t)); renderSalesMain(); renderDepts(window.LF); } catch (e) { console.log(e); }
@@ -519,7 +538,7 @@ window.__gvB16 = t => {  // Битрикс24: Дата | UA | MD | PL | GE | AM 
       .filter(r => /^\d{4}-\d{2}-\d{2}$/.test(r.d) && typeof r.now === 'number');
     if (!rows.length) return;
     rows.sort((a, b) => a.d < b.d ? -1 : 1);
-    window.WBX = rows; renderWarmNow(); mergeWarm();
+    window.WBX = rows; renderWarmNow(); mergeWarm(); if (window.FN && FN.rows.length) renderFunnel();
   } catch (e) { console.log(e); }
 };
 function num2(v) { return typeof v === 'number' ? v : 0; }
@@ -631,6 +650,188 @@ function renderWarm(mode) {
 document.getElementById('wm-tabs').addEventListener('click', e => {
   const b = e.target.closest('button'); if (b) renderWarm(b.dataset.mode);
 });
+// ===== Лиды → MQL+SQL → депозиты (Лист18: Дата | ОтделID | Отдел | Страна | Лиды | MQL+SQL на конец дня | Депозиты | Менеджеров) =====
+const FN = { rows: [], scope: 'ALL', mode: 'tot', gran: 'd', per: '7', from: null, to: null };
+const FN_C = { UA: 'Украина', MD: 'Молдова', PL: 'Польша', GE: 'Грузия', AM: 'Армения', PS: 'Пресейл', LG: 'Лидогенерация', XX: 'Прочие' };
+const FN_SALES = ['UA', 'MD', 'PL', 'GE', 'AM'];
+function numF(v) { if (typeof v === 'number') return v; const s = String(v).trim().replace(/\s/g, '').replace(',', '.'); if (!s) return null; const f = parseFloat(s); return isNaN(f) ? null : f; }
+window.__gvF18 = t => {
+  try {
+    const rows = gvRows(t).map(r => ({ d: dstr(r[0]), id: String(r[1]), dept: String(r[2] || ''), c: String(r[3] || ''),
+      l: num2(num(r[4])), w: numF(r[5]), dep: num2(num(r[6])), m: num2(num(r[7])) }))
+      .filter(r => /^\d{4}-\d{2}-\d{2}$/.test(r.d));
+    if (!rows.length) return;
+    rows.sort((a, b) => a.d < b.d ? -1 : 1);
+    FN.rows = rows;
+    // список отделов для фильтра: продажи по странам, затем пресейл
+    const sel = document.getElementById('fn-scope');
+    const seen = new Map();
+    rows.forEach(r => { if (!seen.has(r.id)) seen.set(r.id, r); });
+    const order = ['UA', 'MD', 'PL', 'GE', 'AM', 'PS'];
+    let html = '<option value="ALL">Весь отдел продаж (без пресейла)</option>';
+    for (const c of FN_SALES) html += `<option value="C:${c}">— ${FN_C[c]} (все отделы)</option>`;
+    const depts = [...seen.values()].filter(r => order.includes(r.c)).sort((a, b) => order.indexOf(a.c) - order.indexOf(b.c) || a.dept.localeCompare(b.dept, 'ru'));
+    for (const r of depts) html += `<option value="D:${r.id}">${esc(r.c === 'PS' ? 'Пресейл' : FN_C[r.c] + ' · ' + r.dept)}</option>`;
+    sel.innerHTML = html; sel.value = FN.scope;
+    renderFunnel();
+  } catch (e) { console.log(e); }
+};
+function fnInScope(r) {
+  const s = FN.scope;
+  if (s === 'ALL') return FN_SALES.includes(r.c);
+  if (s.startsWith('C:')) return r.c === s.slice(2);
+  if (s.startsWith('D:')) return r.id === s.slice(2);
+  return false;
+}
+// суммы по дням в выбранном охвате: { d → {l, w|null, dep, m} }
+function fnDaily() {
+  const by = new Map();
+  for (const r of FN.rows) {
+    if (!fnInScope(r)) continue;
+    if (!by.has(r.d)) by.set(r.d, { d: r.d, l: 0, w: null, dep: 0, m: 0 });
+    const o = by.get(r.d); o.l += r.l; o.dep += r.dep; o.m += r.m;
+    if (typeof r.w === 'number') o.w = (o.w || 0) + r.w;
+  }
+  // MQL+SQL по странам/всему отделу до появления снимков по отделам — из Лист16 (Битрикс24, с 27.09)
+  const bx = window.WBX || [];
+  const idx = { UA: 0, MD: 1, PL: 2, GE: 3, AM: 4 };
+  for (const b of bx) {
+    const o = by.get(b.d); if (!o || typeof o.w === 'number') continue;
+    if (FN.scope === 'ALL') o.w = b.c.slice(0, 5).reduce((s, v) => s + v, 0);
+    else if (FN.scope.startsWith('C:')) o.w = b.c[idx[FN.scope.slice(2)]] ?? null;
+  }
+  return [...by.values()].sort((a, b) => a.d < b.d ? -1 : 1);
+}
+function fnDateStr(d) { return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
+function fnRange() {
+  const today = fnDateStr(new Date());
+  if (FN.per === 'c' && FN.from && FN.to) return [FN.from, FN.to];
+  const n = +FN.per || 7;
+  const d = new Date(); d.setDate(d.getDate() - (n - 1));
+  return [fnDateStr(d), today];
+}
+function fnMonthly() { // режим «Месяц»: из «Менеджеры отчет» (Лист1) для всего отдела / страны; по отделам — из Битрикс24
+  const F = window.LF, out = [];
+  const head = window.DHEAD || (F && F.head) || [];
+  const col = (() => {
+    if (!F) return -1;
+    if (FN.scope === 'ALL') return head.findIndex(h => String(h).trim() === 'ВСЕГО');
+    if (FN.scope.startsWith('C:')) return head.findIndex(h => String(h).trim().toUpperCase() === 'ИТОГО ' + FN.scope.slice(2));
+    return -1;
+  })();
+  const cm = new Date().getMonth() + 1;
+  if (col >= 0) {
+    for (let m = 1; m <= cm; m++) {
+      const R = F.rowsM[m]; if (!R) continue;
+      const g = R.dep ? num(R.dep[col]) : null; // «Депозиты» (взятые)
+      const l = R.leads ? num(R.leads[col]) : null, mg = R.mgr ? num(R.mgr[col]) : null;
+      out.push({ key: String(m).padStart(2, '0'), label: MON3[m - 1], l: l ?? 0, dep: g ?? 0, m: mg ?? 0, w: null, src: 'report' });
+    }
+  } else {
+    const by = new Map();
+    for (const r of fnDaily()) { const k = r.d.slice(5, 7); if (!by.has(k)) by.set(k, { key: k, label: MON3[+k - 1], l: 0, dep: 0, m: 0, n: 0, w: null }); const o = by.get(k); o.l += r.l; o.dep += r.dep; o.m += r.m; o.n++; if (typeof r.w === 'number') o.w = r.w; }
+    for (const o of by.values()) { o.m = o.n ? Math.round(o.m / o.n) : 0; out.push(o); }
+  }
+  // MQL+SQL на конец месяца — из дневных данных, если есть
+  const daily = fnDaily();
+  for (const o of out) { const last = daily.filter(r => r.d.slice(5, 7) === o.key && typeof r.w === 'number').pop(); if (last) o.w = last.w; }
+  return out;
+}
+function fnWeekly(days) {
+  const g = new Map();
+  for (const r of days) {
+    const d = new Date(r.d + 'T12:00:00'); const mon = new Date(d); mon.setDate(d.getDate() - ((d.getDay() + 6) % 7));
+    const key = fnDateStr(mon); const sun = new Date(mon); sun.setDate(mon.getDate() + 6);
+    if (!g.has(key)) g.set(key, { key, label: mon.getDate() + '.' + String(mon.getMonth() + 1).padStart(2, '0') + '–' + sun.getDate() + '.' + String(sun.getMonth() + 1).padStart(2, '0'), l: 0, dep: 0, m: 0, n: 0, w: null });
+    const o = g.get(key); o.l += r.l; o.dep += r.dep; o.m += r.m; o.n++; if (typeof r.w === 'number') o.w = r.w;
+  }
+  return [...g.values()].map(o => ({ ...o, m: o.n ? o.m / o.n : 0 }));
+}
+function fnChart(items, prev, perMgr, stockRight) {
+  const W = 900, H = 260, padL = 40, padR = 46, padT = 18, padB = 24;
+  const plotW = W - padL - padR, plotH = H - padT - padB, baseY = padT + plotH;
+  const n = items.length; if (!n) return '<span class="muted" style="font-size:13px">Нет данных за период</span>';
+  const inset = 24;
+  const x = i => padL + inset + (n === 1 ? (plotW - 2 * inset) / 2 : i / (n - 1) * (plotW - 2 * inset));
+  const slot = n > 1 ? (plotW - 2 * inset) / (n - 1) : plotW;
+  const val = (v, m) => (v == null) ? null : (perMgr ? (m > 0 ? v / m : null) : v);
+  const L = items.map(o => val(o.l, o.m)), Wv = items.map(o => val(o.w, o.m)), D = items.map(o => val(o.dep, o.m));
+  const PL = prev ? prev.map(o => val(o.l, o.m)) : [], PW = prev ? prev.map(o => val(o.w, o.m)) : [];
+  const maxL = Math.max(1, ...[...L, ...PL, ...(stockRight ? [] : [...Wv, ...PW])].filter(v => v != null));
+  const maxD = Math.max(1, ...[...D, ...(stockRight ? Wv : [])].filter(v => v != null));
+  const yL = v => baseY - v / maxL * plotH, yD = v => baseY - v / maxD * plotH;
+  const yW = stockRight ? yD : yL;
+  const fmt = v => perMgr ? (Math.round(v * 10) / 10).toString().replace('.', ',') : Math.round(v);
+  let out = `<line x1="${padL}" y1="${baseY}" x2="${W - padR}" y2="${baseY}" stroke="var(--baseline)"/>`;
+  // сетка и оси
+  for (let k = 1; k <= 3; k++) {
+    const yy = baseY - k / 3 * plotH;
+    out += `<line x1="${padL}" y1="${yy}" x2="${W - padR}" y2="${yy}" stroke="var(--grid)" stroke-dasharray="2 4"/>`;
+    out += `<text x="${padL - 6}" y="${yy + 4}" text-anchor="end" font-size="10" fill="var(--text-muted)">${fmt(maxL * k / 3)}</text>`;
+    out += `<text x="${W - padR + 6}" y="${yy + 4}" font-size="10" fill="var(--series-1)">${fmt(maxD * k / 3)}</text>`;
+  }
+  // депозиты — столбики (правая шкала)
+  const bw = Math.max(6, Math.min(28, slot * 0.45));
+  D.forEach((v, i) => { if (v == null) return; const h = v / maxD * plotH; out += `<rect x="${x(i) - bw / 2}" y="${baseY - h}" width="${bw}" height="${h}" rx="3" fill="var(--series-1)" opacity="0.6"><title>Депозиты: ${fmt(v)}</title></rect>`; if (v > 0) out += `<text x="${x(i)}" y="${baseY - h - 4}" text-anchor="middle" font-size="10" fill="var(--series-1)">${fmt(v)}</text>`; });
+  const line = (arr, color, dash, width) => { const pts = arr.map((v, i) => v == null ? null : [x(i), yL(v)]).filter(Boolean); if (pts.length < 2) return ''; return `<polyline fill="none" stroke="${color}" stroke-width="${width}" ${dash ? 'stroke-dasharray="5 5" opacity="0.7"' : ''} stroke-linejoin="round" points="${pts.map(p => p[0].toFixed(1) + ',' + p[1].toFixed(1)).join(' ')}"/>`; };
+  const lineW = (arr, dash, width) => { const pts = arr.map((v, i) => v == null ? null : [x(i), yW(v)]).filter(Boolean); if (pts.length < 2) return ''; return `<polyline fill="none" stroke="var(--series-2)" stroke-width="${width}" ${dash ? 'stroke-dasharray="5 5" opacity="0.7"' : ''} stroke-linejoin="round" points="${pts.map(p => p[0].toFixed(1) + ',' + p[1].toFixed(1)).join(' ')}"/>`; };
+  out += line(PL, 'var(--series-3)', true, 1.6) + lineW(PW, true, 1.6);
+  out += line(L, 'var(--series-3)', false, 2.6) + lineW(Wv, false, 2.6);
+  L.forEach((v, i) => { if (v == null) return; out += `<circle cx="${x(i)}" cy="${yL(v)}" r="3" fill="var(--series-3)"/>`; if (n <= 16) out += `<text x="${x(i)}" y="${yL(v) - 7}" text-anchor="middle" font-size="10" font-weight="650" fill="var(--series-3)">${fmt(v)}</text>`; });
+  Wv.forEach((v, i) => { if (v == null) return; out += `<circle cx="${x(i)}" cy="${yW(v)}" r="3" fill="var(--series-2)"/>`; if (n <= 16) out += `<text x="${x(i)}" y="${yW(v) + 14}" text-anchor="middle" font-size="10" font-weight="650" fill="var(--series-2)">${fmt(v)}</text>`; });
+  const step = Math.ceil(n / 14);
+  items.forEach((o, i) => { if (i % step && i !== n - 1) return; out += `<text x="${x(i)}" y="${baseY + 15}" text-anchor="middle" font-size="10" fill="var(--text-muted)">${esc(o.label)}</text>`; });
+  const lg = [['var(--series-3)', 'Лиды (созданы в New Lead)'], ['var(--series-2)', 'MQL+SQL в работе на конец ' + (stockRight ? 'месяца (правая шкала)' : 'дня')], ['var(--series-1)', 'Депозиты (правая шкала)']]
+    .map(([c, t]) => `<span style="display:inline-flex;align-items:center;gap:6px;margin-right:16px;font-size:12px;color:var(--text-secondary)"><span style="width:10px;height:10px;border-radius:3px;background:${c}"></span>${t}</span>`).join('') +
+    (prev ? `<span style="font-size:12px;color:var(--text-muted)">пунктир — неделей раньше</span>` : '');
+  return `<div style="margin-bottom:6px">${lg}</div><svg viewBox="0 0 ${W} ${H}" role="img">${out}</svg>`;
+}
+function renderFunnel() {
+  if (!FN.rows.length) return;
+  const perMgr = FN.mode === 'pm';
+  const daily = fnDaily();
+  let items, prev = null, title;
+  const scopeName = document.getElementById('fn-scope').selectedOptions[0]?.textContent || '';
+  if (FN.gran === 'm') {
+    items = fnMonthly().map(o => ({ ...o }));
+    title = `По месяцам · ${scopeName}` + (items.some(o => o.src === 'report') ? ' · лиды и депозиты — «Менеджеры отчет», MQL+SQL — Битрикс24' : ' · Битрикс24 с 29.09');
+  } else {
+    const [from, to] = fnRange();
+    const inR = daily.filter(r => r.d >= from && r.d <= to).map(r => ({ ...r, label: r.d.slice(8, 10) + '.' + r.d.slice(5, 7) }));
+    if (FN.gran === 'w') { items = fnWeekly(inR); title = `По неделям · ${scopeName} · ${from.slice(8, 10)}.${from.slice(5, 7)}–${to.slice(8, 10)}.${to.slice(5, 7)}`; }
+    else {
+      items = inR;
+      const byD = new Map(daily.map(r => [r.d, r]));
+      prev = inR.map(r => { const d = new Date(r.d + 'T12:00:00'); d.setDate(d.getDate() - 7); return byD.get(fnDateStr(d)) || { l: null, w: null, dep: null, m: 0 }; });
+      if (!prev.some(p => p.l != null)) prev = null;
+      title = `По дням · ${scopeName} · ${from.slice(8, 10)}.${from.slice(5, 7)}–${to.slice(8, 10)}.${to.slice(5, 7)}`;
+    }
+  }
+  document.getElementById('fn-title').textContent = title + (perMgr ? ' · на одного менеджера' : '');
+  document.getElementById('fn-chart').innerHTML = fnChart(items, prev, perMgr, FN.gran === 'm');
+  // сравнение дня
+  const byD = new Map(daily.map(r => [r.d, r]));
+  const now = new Date(); const t0 = fnDateStr(now);
+  const y = new Date(now); y.setDate(now.getDate() - 1);
+  const wk = new Date(now); wk.setDate(now.getDate() - 7);
+  const mon = new Date(now); mon.setDate(now.getDate() - ((now.getDay() + 6) % 7));
+  const cells = [['Сегодня', t0], ['Вчера', fnDateStr(y)], ['Неделю назад', fnDateStr(wk)], ['Понедельник', fnDateStr(mon)]];
+  const f = (v, m) => v == null ? '—' : (perMgr ? (m > 0 ? (Math.round(v / m * 10) / 10).toString().replace('.', ',') : '—') : v);
+  document.getElementById('fn-cmp').innerHTML = cells.map(([lbl, d]) => { const r = byD.get(d); return `<div class="mini" style="min-width:150px"><div class="mini-label">${lbl} · ${d.slice(8, 10)}.${d.slice(5, 7)}</div><div class="mini-value" style="font-size:15px;line-height:1.5">` +
+    (r ? `<span style="color:var(--series-3)">лиды ${f(r.l, r.m)}</span><br><span style="color:var(--series-2)">MQL+SQL ${f(r.w, r.m)}</span><br><span style="color:var(--series-1)">депозиты ${f(r.dep, r.m)}</span>` + (perMgr ? `<br><span class="muted" style="font-size:11px">менеджеров ${r.m}</span>` : '') : '<span class="muted">нет данных</span>') + `</div></div>`; }).join('');
+}
+document.getElementById('fn-scope').addEventListener('change', e => { FN.scope = e.target.value; renderFunnel(); });
+for (const [id, key] of [['fn-mode', 'mode'], ['fn-gran', 'gran'], ['fn-per', 'per']]) {
+  document.getElementById(id).addEventListener('click', e => {
+    const b = e.target.closest('button'); if (!b) return;
+    document.querySelectorAll('#' + id + ' button').forEach(x => x.classList.toggle('on', x === b));
+    FN[key] = b.dataset.v;
+    if (key === 'per') document.getElementById('fn-custom').hidden = b.dataset.v !== 'c';
+    renderFunnel();
+  });
+}
+document.getElementById('fn-from').addEventListener('change', e => { FN.from = e.target.value; renderFunnel(); });
+document.getElementById('fn-to').addEventListener('change', e => { FN.to = e.target.value; renderFunnel(); });
 // ===== Дела Битрикс24 (Лист17): Дата | себе | другими | выполнено | звонки | просрочено | открытых | топ JSON | обновлено =====
 window.__gvA17 = t => {
   try {
@@ -931,6 +1132,7 @@ gvLoad('Лист5', '__gvW', 'A1:L400');
 gvLoad('Лист16', '__gvB16', 'A1:Q400');
 gvLoad('Лист8', '__gvH8', 'A1:C400');
 gvLoad('Лист17', '__gvA17', 'A1:I400');
+gvLoad('Лист18', '__gvF18', 'A1:H6000');
 </script>
 </body>
 </html>
