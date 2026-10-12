@@ -117,10 +117,13 @@
       <button class="on" data-k="2">Чистые депозиты</button>
       <button data-k="1">Депозиты всего</button>
       <button data-k="3">Покупки</button>
+      <span style="flex-basis:100%;height:0"></span>
+      <span class="muted" style="font-size:12px;align-self:center">Ось:</span>
+      <span class="tabs" id="pace-x" style="margin:0"><button class="on" data-x="pct">% месяца по рабочим дням</button><button data-x="day">Календарные дни</button></span>
     </div>
     <div class="chart-title" id="pace-title">Темп месяца: накопительно с 1-го числа, день в день</div>
     <div class="chart" id="pace-chart"><span class="muted" style="font-size:13px">Загрузка…</span></div>
-    <div class="note" id="pace-note">Сопоставление темпов: сколько было на этот же день месяца в прошлые месяцы. История дневных снимков ведётся с 04.08.2026. Последняя точка закрытого месяца — официальный итог из «Аналитики продаж» (возвраты, оформленные после снимка, уменьшают чистые депозиты).</div>
+    <div class="note" id="pace-note">Сопоставление темпов на равной доле месяца: ось — процент пройденных рабочих дней (пн–пт), поэтому 40% октября сравнивается с 40% сентября, а не с тем же числом, которое могло выпасть на выходной. Выходные дни месяц не продвигают — их результат показан на доле последнего рабочего дня. История дневных снимков ведётся с 04.08.2026. Последняя точка закрытого месяца — официальный итог из «Аналитики продаж» (возвраты, оформленные после снимка, уменьшают чистые депозиты).</div>
   </section>
 
   <section class="card">
@@ -948,60 +951,69 @@ window.__gvH8 = t => {
     if (last[1] != null) document.getElementById('sd-mgr').textContent = last[1];
   } catch (e) { console.log(e); }
 };
-// «Темп месяца» — накопительные линии по дням месяца (Лист4: Дата | Депозиты | Чистые | Покупки)
-function lineChart(seriesArr, markDay) {
-  const W = 900, H = 235, padL = 26, padR = 60, padT = 20, padB = 22;
+// «Темп месяца» — накопительные линии (Лист4: Дата | Депозиты | Чистые | Покупки)
+// Ось X — либо календарный день, либо % месяца по рабочим дням (пн–пт): так сравниваются равные доли месяца, а не даты,
+// которые в разных месяцах попадают то на выходной, то на будни.
+window.PXMODE = window.PXMODE || 'pct';
+function wdCalendar(ym) { // ym 'yyyy-mm' → { total, wd: [день → рабочих дней прошло к концу дня] }
+  const y = +ym.slice(0, 4), m = +ym.slice(5, 7) - 1;
+  const dim = new Date(y, m + 1, 0).getDate();
+  const wd = [0]; let c = 0;
+  for (let d = 1; d <= dim; d++) { const dow = new Date(y, m, d).getDay(); if (dow >= 1 && dow <= 5) c++; wd.push(c); }
+  return { total: c || 1, wd, dim };
+}
+const PACE_W = 900, PACE_H = 235, PACE_PL = 36, PACE_PR = 60, PACE_PT = 20, PACE_PB = 22;
+function lineChart(seriesArr, markX, ticks) { // точки: { x: 0..1, v, lbl }
+  const W = PACE_W, H = PACE_H, padL = PACE_PL, padR = PACE_PR, padT = PACE_PT, padB = PACE_PB;
   const plotW = W - padL - padR, plotH = H - padT - padB, baseY = padT + plotH;
-  const xd = d => padL + (d - 1) / 30 * plotW;
+  const xf = f => padL + f * plotW;
   const maxV = Math.max(1, ...seriesArr.flatMap(s => s.pts.map(p => p.v)));
   const yv = v => baseY - v / maxV * plotH;
   let out = `<line x1="${padL}" y1="${baseY}" x2="${W - padR + 20}" y2="${baseY}" stroke="var(--baseline)"/>`;
-  for (const d of [1, 5, 10, 15, 20, 25, 31])
-    out += `<text x="${xd(d)}" y="${baseY + 15}" text-anchor="middle" font-size="11" fill="var(--text-muted)">${d}</text>`;
-  if (markDay) out += `<line x1="${xd(markDay)}" y1="${padT - 4}" x2="${xd(markDay)}" y2="${baseY}" stroke="var(--series-2)" stroke-dasharray="4 4" stroke-width="1"/>`;
+  for (const t of ticks)
+    out += `<text x="${xf(t.x)}" y="${baseY + 15}" text-anchor="middle" font-size="11" fill="var(--text-muted)">${t.label}</text>`;
+  if (markX != null) out += `<line x1="${xf(markX)}" y1="${padT - 4}" x2="${xf(markX)}" y2="${baseY}" stroke="var(--series-2)" stroke-dasharray="4 4" stroke-width="1"/>`;
   for (const s of seriesArr) {
     if (!s.pts.length) continue;
-    const ptstr = s.pts.map(p => xd(p.day).toFixed(1) + ',' + yv(p.v).toFixed(1)).join(' ');
+    const ptstr = s.pts.map(p => xf(p.x).toFixed(1) + ',' + yv(p.v).toFixed(1)).join(' ');
     out += `<polyline fill="none" stroke="${s.color}" stroke-width="${s.width}" stroke-linejoin="round" points="${ptstr}"/>`;
     const lp = s.pts[s.pts.length - 1];
-    out += `<circle cx="${xd(lp.day)}" cy="${yv(lp.v)}" r="${s.width > 3 ? 4.5 : 3}" fill="${s.color}"/>`;
-    out += `<text x="${xd(lp.day) + 8}" y="${yv(lp.v) + 4}" font-size="12" font-weight="650" fill="${s.color}">${lp.v}</text>`;
+    out += `<circle cx="${xf(lp.x)}" cy="${yv(lp.v)}" r="${s.width > 3 ? 4.5 : 3}" fill="${s.color}"/>`;
+    out += `<text x="${xf(lp.x) + 8}" y="${yv(lp.v) + 4}" font-size="12" font-weight="650" fill="${s.color}">${lp.v}</text>`;
   }
   const legend = seriesArr.map(s =>
     `<span style="display:inline-flex;align-items:center;gap:6px;margin-right:16px;font-size:12px;color:var(--text-secondary)"><span style="width:10px;height:10px;border-radius:3px;background:${s.color}"></span>${esc(s.label)}</span>`).join('');
   return `<div style="margin-bottom:6px">${legend}</div><svg viewBox="0 0 ${W} ${H}" role="img">${out}</svg>`;
 }
-function attachPaceHover(seriesArr) {
+function attachPaceHover(seriesArr, headFor) {
   const wrap = document.getElementById('pace-wrap'); if (!wrap) return;
   const svg = wrap.querySelector('svg'); const tip = document.getElementById('pace-tip');
   if (!svg || !tip) return;
-  const W = 900, H = 235, padL = 26, padR = 60, padT = 20, padB = 22;
+  const W = PACE_W, padL = PACE_PL, padR = PACE_PR, padT = PACE_PT, padB = PACE_PB, H = PACE_H;
   const plotW = W - padL - padR, plotH = H - padT - padB, baseY = padT + plotH;
   const maxV = Math.max(1, ...seriesArr.flatMap(s => s.pts.map(p => p.v)));
-  const xd = d => padL + (d - 1) / 30 * plotW;
+  const xf = f => padL + f * plotW;
   const yv = v => baseY - v / maxV * plotH;
   const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
   svg.appendChild(g);
   const move = (cx, cy) => {
     const r = svg.getBoundingClientRect(); if (!r.width) return;
-    const x = (cx - r.left) * W / r.width;
-    let day = Math.round(1 + (x - padL) / plotW * 30);
-    if (day < 1) day = 1; if (day > 31) day = 31;
-    let html = `<line x1="${xd(day)}" y1="${padT - 4}" x2="${xd(day)}" y2="${baseY}" stroke="var(--text-muted)" stroke-width="1" stroke-dasharray="2 3"/>`;
+    let f = ((cx - r.left) * W / r.width - padL) / plotW;
+    if (f < 0) f = 0; if (f > 1) f = 1;
+    let html = `<line x1="${xf(f)}" y1="${padT - 4}" x2="${xf(f)}" y2="${baseY}" stroke="var(--text-muted)" stroke-width="1" stroke-dasharray="2 3"/>`;
     const lines = [];
     for (const s of seriesArr) {
       if (!s.pts.length) continue;
-      const maxDay = s.pts[s.pts.length - 1].day;
-      if (day > maxDay) continue; // у месяца ещё/уже нет данных на этот день
-      const upto = s.pts.filter(p => p.day <= day);
+      if (f > s.pts[s.pts.length - 1].x + 0.012) continue; // у месяца ещё/уже нет данных на эту долю
+      const upto = s.pts.filter(p => p.x <= f + 0.012);
       if (!upto.length) continue;
       const lp = upto[upto.length - 1];
-      html += `<circle cx="${xd(day)}" cy="${yv(lp.v)}" r="3.5" fill="${s.color}" stroke="#fff" stroke-width="1.5"/>`;
-      lines.push(`<span style="display:inline-flex;align-items:center;gap:6px"><span style="width:8px;height:8px;border-radius:2px;background:${s.color};display:inline-block"></span>${esc(s.label)} — <b>${lp.v}</b></span>`);
+      html += `<circle cx="${xf(f)}" cy="${yv(lp.v)}" r="3.5" fill="${s.color}" stroke="var(--surface-1)" stroke-width="1.5"/>`;
+      lines.push(`<span style="display:inline-flex;align-items:center;gap:6px"><span style="width:8px;height:8px;border-radius:2px;background:${s.color};display:inline-block"></span>${esc(s.label)} — <b>${lp.v}</b>${lp.lbl ? ' <span class="muted">(' + esc(lp.lbl) + ')</span>' : ''}</span>`);
     }
     if (!lines.length) { g.innerHTML = ''; tip.hidden = true; return; }
     g.innerHTML = html;
-    tip.innerHTML = `<div style="font-weight:650;margin-bottom:2px">${day}-е число</div>` + lines.join('<br>');
+    tip.innerHTML = `<div style="font-weight:650;margin-bottom:2px">${headFor(f)}</div>` + lines.join('<br>');
     tip.hidden = false;
     const wr = wrap.getBoundingClientRect();
     let lx = cx - wr.left + 16;
@@ -1029,7 +1041,9 @@ window.__gvP = t => {
 function renderPace(k) {
   window.PMODE = k;
   const rows = window.PROWS || []; if (!rows.length) return;
+  const pctMode = window.PXMODE === 'pct';
   document.querySelectorAll('#pace-tabs button').forEach(b => b.classList.toggle('on', +b.dataset.k === +k));
+  document.querySelectorAll('#pace-x button').forEach(b => b.classList.toggle('on', b.dataset.x === window.PXMODE));
   const byM = new Map();
   for (const r of rows) {
     if (typeof r[k] !== 'number') continue;
@@ -1051,28 +1065,48 @@ function renderPace(k) {
     pts[pts.length - 1] = { day: pts[pts.length - 1].day, v: off, official: true };
   }
   const cur = yms[yms.length - 1];
-  const markDay = Math.max(...byM.get(cur).map(p => p.day));
+  const curDay = Math.max(...byM.get(cur).map(p => p.day));
+  // положение точки на оси: доля месяца
+  const cal = {}; yms.forEach(ym => { cal[ym] = wdCalendar(ym); });
+  const xOf = (ym, day) => pctMode ? cal[ym].wd[day] / cal[ym].total : (day - 1) / 30;
+  const dl = (ym, day) => String(day).padStart(2, '0') + '.' + ym.slice(5, 7);
   const styles = [
     { color: 'var(--series-1)', width: 3.5 },
     { color: 'var(--series-1-lt)', width: 2.5 },
     { color: 'var(--baseline)', width: 2 },
   ];
-  const seriesArr = yms.slice().reverse().map((ym, i) => ({
-    label: MON_FULL[+ym.slice(5, 7) - 1], pts: byM.get(ym).sort((a, b) => a.day - b.day), ...styles[i],
-  })).reverse();
+  const seriesArr = yms.slice().reverse().map((ym, i) => {
+    let pts = byM.get(ym).sort((a, b) => a.day - b.day).map(p => ({ x: xOf(ym, p.day), v: p.v, lbl: dl(ym, p.day), day: p.day, official: p.official }));
+    if (pctMode) { // выходные не двигают месяц: на одной доле остаётся последняя точка (конец выходных)
+      const m = new Map(); pts.forEach(p => m.set(p.x, p)); pts = [...m.values()].sort((a, b) => a.x - b.x);
+    }
+    return { label: MON_FULL[+ym.slice(5, 7) - 1], pts, ...styles[i] };
+  }).reverse();
+  const markX = xOf(cur, curDay);
+  const ticks = pctMode
+    ? [0, 20, 40, 60, 80, 100].map(p => ({ x: p / 100, label: p + '%' }))
+    : [1, 5, 10, 15, 20, 25, 31].map(d => ({ x: (d - 1) / 30, label: String(d) }));
+  const headFor = f => pctMode ? Math.round(f * 100) + '% месяца' : Math.round(1 + f * 30) + '-е число';
   document.getElementById('pace-chart').innerHTML =
-    '<div id="pace-wrap" style="position:relative">' + lineChart(seriesArr, markDay) +
-    '<div id="pace-tip" hidden style="position:absolute;z-index:5;pointer-events:none;background:#fff;border:1px solid var(--border,#e3e8ef);border-radius:8px;padding:6px 10px;font-size:12px;line-height:1.55;box-shadow:0 4px 14px rgba(0,0,0,.1);white-space:nowrap"></div></div>';
-  attachPaceHover(seriesArr);
-  const cmp = yms.slice().reverse().map(ym => {
-    const upto = byM.get(ym).filter(p => p.day <= markDay);
-    return upto.length ? MON_FULL[+ym.slice(5, 7) - 1] + ' — ' + upto[upto.length - 1].v + (upto[upto.length - 1].official ? ' (итог месяца)' : '') : null;
+    '<div id="pace-wrap" style="position:relative">' + lineChart(seriesArr, markX, ticks) +
+    '<div id="pace-tip" hidden style="position:absolute;z-index:5;pointer-events:none;background:var(--surface-1);color:var(--text-primary);border:1px solid var(--border);border-radius:8px;padding:6px 10px;font-size:12px;line-height:1.55;box-shadow:0 4px 14px rgba(0,0,0,.18);white-space:nowrap"></div></div>';
+  attachPaceHover(seriesArr, headFor);
+  const cmp = seriesArr.slice().reverse().map(s => {
+    const upto = s.pts.filter(p => p.x <= markX + 0.001);
+    if (!upto.length) return null;
+    const lp = upto[upto.length - 1];
+    return s.label + ' — ' + lp.v + (lp.official ? ' (итог месяца)' : (pctMode ? ' (' + lp.lbl + ')' : ''));
   }).filter(Boolean);
-  document.getElementById('pace-title').textContent =
-    PACE_NAMES[k] + ', накопительно с 1-го числа · на ' + markDay + '-е число: ' + cmp.join(' · ');
+  const at = pctMode
+    ? 'на ' + Math.round(markX * 100) + '% месяца (' + cal[cur].wd[curDay] + '-й рабочий день из ' + cal[cur].total + ')'
+    : 'на ' + curDay + '-е число';
+  document.getElementById('pace-title').textContent = PACE_NAMES[k] + ', накопительно с 1-го числа · ' + at + ': ' + cmp.join(' · ');
 }
 document.getElementById('pace-tabs').addEventListener('click', e => {
   const b = e.target.closest('button'); if (b) renderPace(+b.dataset.k);
+});
+document.getElementById('pace-x').addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b) return; window.PXMODE = b.dataset.x; renderPace(window.PMODE || 2);
 });
 drawQuarters();
 // --- устойчивость: если «Менеджеры отчет» недоступна, поднимаем последние рабочие данные ---
