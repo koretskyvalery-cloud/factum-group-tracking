@@ -190,6 +190,15 @@
   .chev { transition: transform 0.15s ease; color: var(--text-muted); font-size: 11px; }
   .chart-open .chev { transform: rotate(180deg); }
   .chart-wrap { padding-bottom: 4px; }
+  /* Десктоп: «Динамика» всегда развёрнута, без кнопки; разделитель — сразу под метриками,
+     графики прижаты к низу карточек, чтобы линии и оси в соседних карточках совпадали.
+     Мобильный (≤720px): свёрнута, раскрывается нажатием. */
+  @media (min-width: 721px) {
+    .chart-toggle { display: none; }
+    .chart-block { margin-top: 0; padding-top: 10px; flex: 1 1 auto; display: flex; flex-direction: column; }
+    .chart-wrap, .chart-wrap[hidden] { display: flex; flex-direction: column; flex: 1 1 auto; }
+    .chart-wrap > .chart { margin-top: auto; }
+  }
   .chart-head {
     display: flex; align-items: center; justify-content: space-between;
     gap: 12px; margin-bottom: 6px; flex-wrap: wrap;
@@ -296,7 +305,7 @@ function barPath(x, y, w, h, r) {
 }
 
 function renderChart(p) {
-  const W = 440, H = 150, padT = 20, padB = 18, padX = 6;
+  const W = 440, H = p.H || 150, padT = 20, padB = 18, padX = 6;
   const plotH = H - padT - padB;
   const nGroups = p.months.length;
   const series = p.metrics.filter(m => m.series);
@@ -391,6 +400,7 @@ const PROJ_ICONS = {
 const openCharts = new Set(); // какие карточки развёрнуты — переживает live-перерисовку
 const chartTab = {};          // выбранная вкладка графика по имени проекта
 let currentProjects = null;   // последний отрисованный набор данных
+const lastChart = {};         // параметры последнего графика по проекту — для подгонки высоты на десктопе
 
 // хронология продаж: среднее купленных авто за месяц, по кварталам, 2025 vs 2026
 // (источник — «Общий зачет 2025/2026»); фолбэк-снимок, при загрузке живых данных пересчитывается
@@ -547,7 +557,8 @@ function renderCard(p) {
       series: SALES_QUARTERS.years[y],
       color: i === ys.length - 1 ? 'var(--series-1)' : 'var(--series-1-lt)',
     }));
-    chartHtml = renderChart({ metrics: qMetrics, months: SALES_QUARTERS.labels, chartTitle: 'Хронология продаж' });
+    lastChart[p.name] = { metrics: qMetrics, months: SALES_QUARTERS.labels, chartTitle: 'Хронология продаж' };
+    chartHtml = renderChart(lastChart[p.name]);
     chartTitle = 'Среднее купленных авто за месяц' + (SALES_QUARTERS.note ? ' · ' + SALES_QUARTERS.note : '');
     legendHtml = `<div class="legend">${qMetrics.map(m =>
       `<div class="legend-item"><span class="swatch" style="background:${m.color}"></span>${esc(m.label)}</div>`).join('')}</div>`;
@@ -616,11 +627,13 @@ function renderCard(p) {
       chartTitle = 'Прирост за неделю (пн–вс) · последняя — идёт';
       if (wks.length > 10) { hMetrics.forEach(m => { m.series = m.series.slice(-10); m.tips = m.tips.slice(-10); }); labels = labels.slice(-10); }
     }
-    chartHtml = renderChart({ metrics: hMetrics, months: labels, chartTitle });
+    lastChart[p.name] = { metrics: hMetrics, months: labels, chartTitle };
+    chartHtml = renderChart(lastChart[p.name]);
     legendHtml = `<div class="legend">${hMetrics.map(m =>
       `<div class="legend-item"><span class="swatch" style="background:${m.color}"></span>${esc(m.label)}</div>`).join('')}</div>`;
   } else {
-    chartHtml = renderChart(p.chartMetrics ? { metrics: p.chartMetrics, months: p.months, chartTitle: p.chartTitle } : p);
+    lastChart[p.name] = p.chartMetrics ? { metrics: p.chartMetrics, months: p.months, chartTitle: p.chartTitle } : { metrics: p.metrics, months: p.months, chartTitle: p.chartTitle };
+    chartHtml = renderChart(lastChart[p.name]);
   }
   const tabs = hasAlt ? `
         <div class="chart-tabs">
@@ -682,7 +695,25 @@ document.getElementById('grid').addEventListener('click', e => {
 function renderAll(projects) {
   currentProjects = projects;
   document.getElementById('grid').innerHTML = projects.map(renderCard).join('');
+  requestAnimationFrame(fitCharts);
 }
+// Десктоп: графики прижаты к низу карточек; если над графиком остаётся пустое место
+// (у соседней карточки есть вкладки/легенда), растягиваем график по высоте — оси остаются на одной линии
+function fitCharts() {
+  if (window.innerWidth <= 720) return;
+  document.querySelectorAll('#grid .chart-block').forEach(block => {
+    const name = block.getAttribute('data-proj'), chart = block.querySelector('.chart'), svg = chart && chart.querySelector('svg');
+    if (!svg || !lastChart[name]) return;
+    const prev = chart.previousElementSibling;
+    const gap = chart.getBoundingClientRect().top - (prev ? prev.getBoundingClientRect().bottom : block.getBoundingClientRect().top);
+    const w = svg.getBoundingClientRect().width;
+    if (gap < 6 || !w) return;
+    const extra = Math.min(140, Math.round((gap - 2) * 440 / w));
+    chart.innerHTML = renderChart(Object.assign({}, lastChart[name], { H: 150 + extra }));
+  });
+}
+let fitT = null;
+window.addEventListener('resize', () => { clearTimeout(fitT); fitT = setTimeout(() => { if (currentProjects) renderAll(currentProjects); }, 150); });
 renderAll(PROJECTS); // сборка на момент публикации — фолбэк, если живые данные не загрузятся
 
 // ---------- живые данные напрямую из таблицы-прослойки (gviz, работает с любого домена) ----------
