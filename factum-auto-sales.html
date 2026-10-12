@@ -134,7 +134,7 @@
   <h2 id="dept-h" hidden>По отделам · текущий месяц</h2>
   <section class="card" id="dept-card" hidden>
     <div id="dept-table"></div>
-    <div class="note">«＋» у страны раскрывает её отделы. Новые отделы подтягиваются автоматически. «С депозитами» — менеджеры, давшие хотя бы один депозит за месяц (результат из «Менеджеры отчет»); численность штата — это метрика «Менеджеров работает» выше, она из HR Битрикс24. Покупки в этой разбивке — из «Аналитики продаж месячной» (могут отставать от «Общего зачета» на день-два).</div>
+    <div class="note">«＋» у страны раскрывает её отделы: Украина — Kyiv ×2, Odessa, Dnipro ×2, Lviv ×2, Vinnitsa, Kharkov и Pre-sale; Молдова — Chişinău A.S. и V.K.; Польша — Warszawa и Krakow; Грузия — Tbilisi; Армения — Erevan. Строки «Итого» и «ИТОГО» — как в «Аналитике продаж»: пресейл в них не суммируется, лидгены входят в Украину. «С депозитами» — менеджеры, давшие хотя бы один депозит за месяц (результат из «Менеджеры отчет»); численность штата — это метрика «Менеджеров работает» выше, она из HR Битрикс24. Покупки в этой разбивке — из «Аналитики продаж месячной» (могут отставать от «Общего зачета» на день-два).</div>
   </section>
 
   <h2>Тёплые лиды · Битрикс24</h2>
@@ -353,15 +353,24 @@ function parseFacts(rows) {
 // gviz отбрасывает текстовые заголовки числовых колонок — резервный список по текущей структуре «Аналитики»
 const DHEAD_FALLBACK = ['Месяц','Критерии','ВСЕГО','Итого UA','Итого MD','Итого PL','Итого GE','Итого AM',
   'Kyiv I. M.','Kyiv A. S.','Odessa J. T.','Dnipro D. M.','Dnipro D. P.','Lviv D. D.','Lviv J. S.',
-  'Vinnitsa','Chişinău A.S.','Chişinău V.K.','Лидгены Укр'];
+  'Vinnitsa','Kharkov I. S.','Pre-sale A.H.','Chişinău A.S.','Chişinău V.K.','Warszawa','Krakow','Tbilisi','Erevan'];
+// заголовок колонок: gviz теряет часть текстовых заголовков — пустые места добираем из резервного списка
+function deptHead(F) {
+  const hsrc = (window.DHEAD && window.DHEAD.length) ? window.DHEAD : ((F && F.head) || []);
+  const head = DHEAD_FALLBACK.map((h, i) => String(hsrc[i] || '').trim() || h);
+  for (let i = DHEAD_FALLBACK.length; i < hsrc.length; i++) head.push(String(hsrc[i] || '').trim());
+  return head;
+}
 const CNAMES = { UA: 'Украина', MD: 'Молдова', PL: 'Польша', GE: 'Грузия', AM: 'Армения', OTHER: 'Другие отделы' };
+// офис → страна (структура отдела продаж): UA — Киев ×2, Одесса, Днепр ×2, Львов ×2, Винница, Харьков, Пресейл;
+// MD — Chişinău A.S. и V.K.; PL — Warszawa, Krakow; GE — Tbilisi; AM — Erevan
 function deptCountry(name) {
   const n = String(name).toLowerCase();
-  if (/kyiv|kiev|odessa|dnipro|lviv|vinnitsa|vinnytsia|kharkiv|киев|одесс|днепр|днипро|льв[іио]в|винниц|вінниц|харк[іо]в/.test(n)) return 'UA';
-  if (/chi[sșş]in|kishinev|b[ăa]l[țt]i|кишин|бельц|молдов/.test(n)) return 'MD';
-  if (/warsaw|krak|wroc|pozna|gdan|lodz|варшав|краков|вроцлав|польш|polan/.test(n)) return 'PL';
+  if (/kyiv|kiev|odessa|odesa|dnipro|dnepr|lviv|lvov|vinnitsa|vinnytsia|kharkiv|kharkov|pre-?sale|presale|киев|київ|одесс|одес|днепр|днипро|дніпро|льв[іио]в|винниц|вінниц|харьк|харк[іо]в|пресейл|presail/.test(n)) return 'UA';
+  if (/chi[sșş]in|kishinev|kishinau|b[ăa]l[țt]i|кишин|бельц|молдов/.test(n)) return 'MD';
+  if (/warsaw|warsz|krak|wroc|pozna|gdan|lodz|варшав|краков|вроцлав|польш|polan/.test(n)) return 'PL';
   if (/tbilisi|batumi|kutaisi|тбилис|батум|кутаис|груз/.test(n)) return 'GE';
-  if (/yerevan|gyumri|ереван|гюмри|армен/.test(n)) return 'AM';
+  if (/yerevan|erevan|erewan|gyumri|ереван|єреван|гюмри|армен/.test(n)) return 'AM';
   return 'OTHER';
 }
 function renderDepts(F0) {
@@ -373,8 +382,7 @@ function renderDepts(F0) {
   document.getElementById('dept-h').textContent = useM === cmD
     ? 'По отделам · текущий месяц'
     : 'По отделам · ' + MON_FULL[useM - 1].toLowerCase() + ' (закрытый месяц; ' + MON_FULL[cmD - 1].toLowerCase() + ' появится, когда его откроют в «Аналитике продаж»)';
-  let head = window.DHEAD;
-  if (!head || !String(head[3] || '').trim()) head = (F.head && String(F.head[3] || '').trim()) ? F.head : DHEAD_FALLBACK;
+  const head = deptHead(F);
   const cell = (row, i) => row ? row[i] : null;
   const mk = (name, i) => ({
     name, mgr: num(cell(F.rows.mgr, i)), net: num(cell(F.rows.net, i)),
@@ -715,7 +723,7 @@ function fnRange() {
 }
 function fnMonthly() { // режим «Месяц»: из «Менеджеры отчет» (Лист1) для всего отдела / страны; по отделам — из Битрикс24
   const F = window.LF, out = [];
-  const head = window.DHEAD || (F && F.head) || [];
+  const head = deptHead(F);
   const col = (() => {
     if (!F) return -1;
     if (FN.scope === 'ALL') return head.findIndex(h => String(h).trim() === 'ВСЕГО');
@@ -1163,8 +1171,8 @@ setTimeout(() => {
   b.textContent = '⚠ Таблица-источник «Менеджеры отчет» недоступна (доступ пропал 16.09 ~15:30)' + (note ? ' · ' + note : '');
   document.getElementById('sub').after(b);
 }, 9000);
-gvLoad('Лист1', '__gvM', 'A1:S300');
-gvLoad('Лист1', '__gvHead', 'A1:S1');
+gvLoad('Лист1', '__gvM', 'A1:X300');
+gvLoad('Лист1', '__gvHead', 'A1:X1');
 gvLoad('Лист3', '__gvS', 'A1:M10');
 gvLoad('Лист4', '__gvP', 'A1:D400');
 gvLoad('Лист5', '__gvW', 'A1:L400');
