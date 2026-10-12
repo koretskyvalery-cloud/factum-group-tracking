@@ -985,7 +985,7 @@ function lineChart(seriesArr, markX, ticks) { // точки: { x: 0..1, v, lbl }
     `<span style="display:inline-flex;align-items:center;gap:6px;margin-right:16px;font-size:12px;color:var(--text-secondary)"><span style="width:10px;height:10px;border-radius:3px;background:${s.color}"></span>${esc(s.label)}</span>`).join('');
   return `<div style="margin-bottom:6px">${legend}</div><svg viewBox="0 0 ${W} ${H}" role="img">${out}</svg>`;
 }
-function attachPaceHover(seriesArr, headFor) {
+function attachPaceHover(seriesArr, headFor, steps, tol, showLbl) {
   const wrap = document.getElementById('pace-wrap'); if (!wrap) return;
   const svg = wrap.querySelector('svg'); const tip = document.getElementById('pace-tip');
   if (!svg || !tip) return;
@@ -1000,16 +1000,18 @@ function attachPaceHover(seriesArr, headFor) {
     const r = svg.getBoundingClientRect(); if (!r.width) return;
     let f = ((cx - r.left) * W / r.width - padL) / plotW;
     if (f < 0) f = 0; if (f > 1) f = 1;
+    // курсор шагает по сетке (доли месяца или дни), а не скользит
+    let best = steps[0]; for (const st of steps) if (Math.abs(st - f) < Math.abs(best - f)) best = st; f = best;
     let html = `<line x1="${xf(f)}" y1="${padT - 4}" x2="${xf(f)}" y2="${baseY}" stroke="var(--text-muted)" stroke-width="1" stroke-dasharray="2 3"/>`;
     const lines = [];
     for (const s of seriesArr) {
       if (!s.pts.length) continue;
-      if (f > s.pts[s.pts.length - 1].x + 0.012) continue; // у месяца ещё/уже нет данных на эту долю
-      const upto = s.pts.filter(p => p.x <= f + 0.012);
+      if (f > s.pts[s.pts.length - 1].x + tol) continue; // у месяца ещё/уже нет данных на эту долю
+      const upto = s.pts.filter(p => p.x <= f + tol);
       if (!upto.length) continue;
       const lp = upto[upto.length - 1];
       html += `<circle cx="${xf(f)}" cy="${yv(lp.v)}" r="3.5" fill="${s.color}" stroke="var(--surface-1)" stroke-width="1.5"/>`;
-      lines.push(`<span style="display:inline-flex;align-items:center;gap:6px"><span style="width:8px;height:8px;border-radius:2px;background:${s.color};display:inline-block"></span>${esc(s.label)} — <b>${lp.v}</b>${lp.lbl ? ' <span class="muted">(' + esc(lp.lbl) + ')</span>' : ''}</span>`);
+      lines.push(`<span style="display:inline-flex;align-items:center;gap:6px"><span style="width:8px;height:8px;border-radius:2px;background:${s.color};display:inline-block"></span>${esc(s.label)} — <b>${lp.v}</b>${showLbl && lp.lbl ? ' <span class="muted">(' + esc(lp.lbl) + ')</span>' : ''}</span>`);
     }
     if (!lines.length) { g.innerHTML = ''; tip.hidden = true; return; }
     g.innerHTML = html;
@@ -1087,15 +1089,18 @@ function renderPace(k) {
     ? [0, 20, 40, 60, 80, 100].map(p => ({ x: p / 100, label: p + '%' }))
     : [1, 5, 10, 15, 20, 25, 31].map(d => ({ x: (d - 1) / 30, label: String(d) }));
   const headFor = f => pctMode ? Math.round(f * 100) + '% месяца' : Math.round(1 + f * 30) + '-е число';
+  // сетка шагов курсора: в режиме % — рабочие дни текущего месяца (одна точка на шаг, соседние месяцы подтягиваются к ближайшей доле)
+  const steps = pctMode ? Array.from({ length: cal[cur].total + 1 }, (_, i) => i / cal[cur].total) : Array.from({ length: 31 }, (_, i) => i / 30);
+  const tol = pctMode ? 0.5 / cal[cur].total : 0.001;
   document.getElementById('pace-chart').innerHTML =
     '<div id="pace-wrap" style="position:relative">' + lineChart(seriesArr, markX, ticks) +
     '<div id="pace-tip" hidden style="position:absolute;z-index:5;pointer-events:none;background:var(--surface-1);color:var(--text-primary);border:1px solid var(--border);border-radius:8px;padding:6px 10px;font-size:12px;line-height:1.55;box-shadow:0 4px 14px rgba(0,0,0,.18);white-space:nowrap"></div></div>';
-  attachPaceHover(seriesArr, headFor);
+  attachPaceHover(seriesArr, headFor, steps, tol, !pctMode);
   const cmp = seriesArr.slice().reverse().map(s => {
     const upto = s.pts.filter(p => p.x <= markX + 0.001);
     if (!upto.length) return null;
     const lp = upto[upto.length - 1];
-    return s.label + ' — ' + lp.v + (lp.official ? ' (итог месяца)' : (pctMode ? ' (' + lp.lbl + ')' : ''));
+    return s.label + ' — ' + lp.v + (lp.official ? ' (итог месяца)' : '');
   }).filter(Boolean);
   const at = pctMode
     ? 'на ' + Math.round(markX * 100) + '% месяца (' + cal[cur].wd[curDay] + '-й рабочий день из ' + cal[cur].total + ')'
