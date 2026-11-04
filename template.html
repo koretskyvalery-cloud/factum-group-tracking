@@ -145,6 +145,15 @@
 
   .metrics { display: flex; gap: 24px; flex-wrap: wrap; margin-bottom: 10px; }
   .metric { min-width: 150px; flex: 1 1 150px; }
+  /* метрика — ссылка на страницу отдела: подсветка и подпись «продажи ›» при наведении */
+  a.metric { color: inherit; text-decoration: none; border-radius: 10px; padding: 6px 8px; margin: -6px -8px; position: relative; }
+  a.metric:hover { background: color-mix(in srgb, var(--series-1) 7%, var(--surface-1)); }
+  a.metric .go { position: absolute; top: 6px; right: 8px; font-size: 11px; font-weight: 600; color: var(--series-1); opacity: 0; transition: opacity .12s ease; }
+  a.metric:hover .go { opacity: 1; }
+  @media (hover: none) { a.metric .go { opacity: 1; } }
+  a.proj-name { color: inherit; text-decoration: none; }
+  a.proj-name:hover { color: var(--series-1); }
+  a.proj-name::after { content: ' ›'; color: var(--text-muted); font-weight: 400; }
   .metric-label { font-size: 12px; color: var(--text-secondary); margin-bottom: 3px; }
   .metric-value { font-size: 32px; line-height: 1.05; font-weight: 600; letter-spacing: -0.01em; }
   .metric-value .of-plan { font-size: 15px; font-weight: 400; color: var(--text-muted); letter-spacing: 0; }
@@ -354,7 +363,7 @@ function renderChart(p) {
   return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(p.chartTitle)}">${out}</svg>`;
 }
 
-function renderMetric(m, projColor) {
+function renderMetric(m, projColor, link, linkLabel) {
   let planHtml;
   if (m.plan != null) {
     const factForPlan = (m.planFact != null) ? m.planFact : m.fact;
@@ -383,12 +392,14 @@ function renderMetric(m, projColor) {
   } else {
     planHtml = `<div class="no-plan">${m.note ? esc(m.note) : 'план в таблице не задан'}</div>`;
   }
+  const tag = link ? `<a class="metric" href="${link}" title="Открыть: ${esc(linkLabel || '')}">` : '<div class="metric">';
   return `
-    <div class="metric">
+    ${tag}
+      ${link ? `<span class="go">${esc(linkLabel || '')} ›</span>` : ''}
       <div class="metric-label">${esc(m.label)}</div>
       <div class="metric-value">${m.fact}</div>
       ${planHtml}
-    </div>`;
+    ${link ? '</a>' : '</div>'}`;
 }
 
 // иконки проектов (Factum Auto — свой favicon; Operator-EX — фавиконка их сайта)
@@ -648,14 +659,11 @@ function renderCard(p) {
       <div class="card-head">
         ${ico ? `<img class="proj-ico" src="${ico}" alt="" onerror="this.outerHTML='<span class=dot style=background:${p.color}></span>'">`
               : `<span class="dot" style="background:${p.color}"></span>`}
-        <span class="proj-name">${esc(p.name)}</span>
+        <a class="proj-name" href="${hasAlt ? 'factum-auto.html' : 'factum-auto.html#b2b'}" title="Приборы проекта">${esc(p.name)}</a>
         ${p.demo ? '<span class="demo-badge">демо-данные</span>' : ''}
-        ${hasAlt || p.name === 'Operator-EX' ? `<div class="head-actions">
-          <a class="btn-link btn-more" href="${hasAlt ? 'goals.html' : 'goals.html?p=oex'}" title="Отделы · цели и результаты" aria-label="Отделы, цели и результаты">›››</a>
-        </div>` : ''}
       </div>
       <div class="proj-desc">${esc(p.desc)}</div>
-      <div class="metrics">${p.metrics.map(m => renderMetric(m, p.color)).join('')}</div>
+      <div class="metrics">${p.metrics.map(m => renderMetric(m, p.color, hasAlt ? 'factum-auto-sales.html' : 'factum-auto.html#b2b', hasAlt ? 'продажи' : 'B2B')).join('')}</div>
       <div class="chart-block${open ? ' chart-open' : ''}" data-proj="${esc(p.name)}">
         <button class="chart-toggle" type="button" aria-expanded="${open}">
           <span>Динамика</span><span class="chev">▼</span>
@@ -919,5 +927,6 @@ gvLoad('Лист3', '__gvS', 'A1:M10');
 gvLoad('Лист4', '__gvH', 'A1:D400');
 gvLoad('Лист6', '__gvP', 'A1:F3000');
 </script>
+<script src="nav.js"></script>
 </body>
 </html>
