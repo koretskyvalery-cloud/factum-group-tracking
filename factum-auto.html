@@ -106,8 +106,6 @@
       <div class="kpis">
         <div class="kpi"><div class="l">Менеджеров работает</div><div class="v" id="hr-mgr">—</div></div>
         <div class="kpi"><div class="l">С депозитами в этом месяце</div><div class="v" id="hr-dep">—</div></div>
-        <div class="kpi"><div class="l">Всего с новичками</div><div class="v" id="hr-all">—</div></div>
-        <div class="kpi"><div class="l">Без депозита</div><div class="v" id="hr-nodep">—</div></div>
       </div>
       <div class="foot">Численность — из HR Битрикс24, «с депозитами» — из «Менеджеры отчет»</div>
     </a>
@@ -267,10 +265,8 @@ window.__gvH8 = t => {
 };
 function renderHr() {
   if (!HR) return;
-  const work = num(HR[1]), all = num(HR[2]); // «работает» — 30+ дней в компании (как на странице продаж), «всего» — с новичками
+  const work = num(HR[1]); // как на странице продаж: метрика «Менеджеров работает» из HR Битрикс24
   if (work != null) $('hr-mgr').textContent = work;
-  if (all != null) $('hr-all').textContent = all;
-  if (work != null && F('mgr') != null) $('hr-nodep').textContent = Math.max(0, work - F('mgr'));
   $('st-hr').style.background = 'var(--text-muted)';
 }
 // тёплые лиды Битрикс24 (Лист16): Дата | UA MD PL GE AM Прочие | Всего | MQL | SQL …
