@@ -13,7 +13,13 @@ import sys
 import urllib.request
 from datetime import datetime, timezone, timedelta
 
-CSV_MONTHLY_URL = os.environ["CSV_MONTHLY_URL"]  # вкладка «Аналитика продаж месячная 2026»
+# Месячная аналитика — из таблицы-прослойки (Лист1): с 11.2026 Apps Script собирает её из новой вкладки
+# «Аналитика продаж месячная от 11.2026» в прежний формат «<Месяц> План/Факт 2026 × критерии».
+# Старый секрет CSV_MONTHLY_URL указывал на вкладку «…до 10.2026» и больше не обновляется.
+MID_SHEET_ID = "10sbvUaWDkrJJqIC7ciuSsci21GuRMUV5P2TBhZCTF8U"
+CSV_MONTHLY_URL = os.environ.get("CSV_MONTHLY_URL_MID") or (
+    "https://docs.google.com/spreadsheets/d/" + MID_SHEET_ID
+    + "/gviz/tq?tqx=out:csv&sheet=%D0%9B%D0%B8%D1%81%D1%821&range=A1:C300&headers=0")
 CSV_B2B_URL = os.environ["CSV_B2B_URL"]          # вкладка «Аналитика B2B»
 
 MONTH_NUM = {
@@ -30,7 +36,7 @@ def fetch_csv(url):
 
 
 def num(s):
-    s = (s or "").strip().replace(" ", "").replace(",", ".")
+    s = (s or "").strip().replace(" ", "").replace("\u00a0", "").replace(",", ".")
     if not s:
         return None
     try:
