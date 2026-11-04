@@ -4,14 +4,15 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <link rel="icon" type="image/svg+xml" href="favicon.svg">
-<title>Factum Auto · детальная аналитика</title>
+<title>Приборы · Factum Group Tracking</title>
 <style>
   :root {
     color-scheme: light;
     --page: #f9f9f7; --surface-1: #fcfcfb;
     --text-primary: #0b0b0b; --text-secondary: #52514e; --text-muted: #898781;
     --border: rgba(11,11,11,0.10); --grid: #e1e0d9; --baseline: #c3c2b7;
-    --series-1: #2a78d6; --series-1-lt: #86b6ef; --series-2: #eb6834; --series-3: #1baf7a;
+    --series-1: #2a78d6; --series-1-lt: #86b6ef; --series-2: #eb6834; --series-3: #1baf7a; --series-4: #eda100;
+    --status-good: #0ca30c; --status-warn: #fab219; --status-bad: #d03b3b;
   }
   @media (prefers-color-scheme: dark) {
     :root:where(:not([data-theme="light"])) {
@@ -19,90 +20,145 @@
       --page: #0d0d0d; --surface-1: #1a1a19;
       --text-primary: #ffffff; --text-secondary: #c3c2b7; --text-muted: #898781;
       --border: rgba(255,255,255,0.10); --grid: #2c2c2a; --baseline: #383835;
-      --series-1: #3987e5; --series-1-lt: #6da7ec; --series-2: #d95926; --series-3: #199e70;
+      --series-1: #3987e5; --series-1-lt: #6da7ec; --series-2: #d95926; --series-3: #199e70; --series-4: #c98500;
     }
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --page: #0d0d0d; --surface-1: #1a1a19;
+    --text-primary: #ffffff; --text-secondary: #c3c2b7; --text-muted: #898781;
+    --border: rgba(255,255,255,0.10); --grid: #2c2c2a; --baseline: #383835;
+    --series-1: #3987e5; --series-1-lt: #6da7ec; --series-2: #d95926; --series-3: #199e70; --series-4: #c98500;
   }
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body { font-family: system-ui, -apple-system, "Segoe UI", sans-serif; background: var(--page);
          color: var(--text-primary); min-height: 100vh; padding: 24px 24px 40px; }
-  .wrap { max-width: 980px; margin: 0 auto; }
-  .back { font-size: 13px; color: var(--series-1); text-decoration: none; }
-  .back:hover { text-decoration: underline; }
-  h1 { font-size: 22px; font-weight: 700; margin-top: 8px; display: flex; align-items: center; gap: 10px; }
-  .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--series-1); flex: none; }
-  .sub { margin: 6px 0 18px; font-size: 13px; color: var(--text-secondary); }
-  h2 { font-size: 15px; font-weight: 650; margin: 20px 0 10px; }
-  .card { background: var(--surface-1); border: 1px solid var(--border); border-radius: 14px;
-          padding: 16px 18px 14px; margin-bottom: 12px; }
-  .depts { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
-  @media (max-width: 760px) { .depts { grid-template-columns: 1fr; } }
-  a.dept { display: block; text-decoration: none; color: inherit; background: var(--surface-1);
-           border: 1px solid var(--border); border-radius: 14px; padding: 14px 16px 12px;
-           transition: border-color .12s ease; }
-  a.dept:hover { border-color: var(--series-1); }
-  .dept-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
-  .dept-name { font-size: 14px; font-weight: 650; }
-  .arrow { color: var(--series-1); font-weight: 600; font-size: 13px; }
-  .dept-mini { display: flex; gap: 18px; margin-top: 10px; flex-wrap: wrap; }
-  .mini { min-width: 70px; }
-  .mini-label { font-size: 11px; color: var(--text-muted); margin-bottom: 2px; }
-  .mini-value { font-size: 22px; font-weight: 650; line-height: 1.1; }
-  .mini-value .u { font-size: 12px; font-weight: 400; color: var(--text-muted); }
-  .demo-badge { font-size: 10px; font-weight: 600; color: var(--text-muted);
-                border: 1px solid var(--border); border-radius: 999px; padding: 1px 7px; vertical-align: 2px; }
-  .metrics { display: flex; gap: 28px; flex-wrap: wrap; margin-bottom: 10px; }
-  .metric { min-width: 130px; }
-  .metric-label { font-size: 12px; color: var(--text-secondary); margin-bottom: 3px; }
-  .metric-value { font-size: 30px; line-height: 1.05; font-weight: 600; }
-  .metric-note { font-size: 12px; color: var(--text-muted); margin-top: 3px; }
-  .chart-title { font-size: 12px; color: var(--text-muted); margin: 4px 0 6px; }
-  .chart svg { display: block; width: 100%; height: auto; }
-  .note { font-size: 13px; color: var(--text-secondary); margin-top: 10px; line-height: 1.45; }
+  .wrap { max-width: 1060px; margin: 0 auto; }
+  header { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin-bottom: 14px; }
+  .kicker { font-size: 13px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 6px; }
+  h1 { font-size: 22px; font-weight: 700; letter-spacing: -0.01em; }
+  .sub { margin-top: 6px; font-size: 13px; color: var(--text-secondary); }
+  .pace { font-size: 12px; color: var(--text-muted); text-align: right; }
+  .pace b { font-size: 18px; color: var(--text-primary); font-weight: 650; }
+
+  .tiles { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+  @media (max-width: 900px) { .tiles { grid-template-columns: repeat(2, 1fr); } }
+  @media (max-width: 600px) { .tiles { grid-template-columns: 1fr; } }
+  .tile { display: flex; flex-direction: column; gap: 10px; background: var(--surface-1); border: 1px solid var(--border);
+          border-radius: 14px; padding: 14px 16px 12px; min-width: 0; color: inherit; text-decoration: none;
+          transition: border-color .12s ease; }
+  a.tile:hover { border-color: var(--series-1); }
+  .t-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+  .t-name { font-size: 15px; font-weight: 650; display: flex; align-items: center; gap: 8px; }
+  .st { width: 9px; height: 9px; border-radius: 50%; flex: none; background: var(--text-muted); }
+  .t-more { font-size: 12px; font-weight: 600; color: var(--series-1); white-space: nowrap; }
+  .t-more.soon { color: var(--text-muted); font-weight: 500; }
+  .kpis { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 14px; }
+  .kpi .l { font-size: 11px; color: var(--text-muted); margin-bottom: 2px; }
+  .kpi .v { font-size: 22px; font-weight: 650; line-height: 1.1; font-variant-numeric: tabular-nums; }
+  .kpi .v small { font-size: 12px; font-weight: 400; color: var(--text-muted); }
+  .kpi .pct { font-size: 12px; font-weight: 650; margin-left: 4px; }
+  .meter { height: 6px; border-radius: 3px; overflow: hidden; position: relative; margin-top: 5px; }
+  .meter i { position: absolute; inset: 0 auto 0 0; border-radius: 3px; min-width: 2px; }
+  .meter b { position: absolute; top: -2px; bottom: -2px; width: 2px; background: var(--text-primary); opacity: .5; }
+  .foot { font-size: 12px; color: var(--text-muted); margin-top: auto; padding-top: 6px; border-top: 1px solid var(--grid); line-height: 1.4; }
+  .foot b { color: var(--text-secondary); font-weight: 600; }
+  .note { font-size: 12px; color: var(--text-muted); margin-top: 14px; line-height: 1.45; max-width: 90ch; }
+  .lock { font-size: 13px; font-weight: 600; color: var(--text-secondary); padding: 4px 0; }
 </style>
 </head>
 <body>
 <div class="wrap">
-  <a class="back" href="index.html">← Factum Group Tracking</a>
-  <h1><span class="dot"></span>Factum Auto · детальная аналитика</h1>
-  <div class="sub" id="sub">Импорт авто под заказ</div>
+  <header>
+    <div>
+      <div class="kicker">Приборы</div>
+      <h1>Главные показатели отделов · <span id="mon">текущий месяц</span></h1>
+      <div class="sub" id="sub">данные загружаются…</div>
+    </div>
+    <div class="pace"><b id="mp-pct">—</b> месяца по рабочим дням<br><span id="mp-days"></span></div>
+  </header>
 
-  <h2>Отделы</h2>
-  <div class="depts">
-    <a class="dept" href="factum-auto-hr.html">
-      <div class="dept-head"><span class="dept-name">HR-отдел</span><span class="arrow">→</span></div>
-      <div class="dept-mini">
-        <div class="mini"><div class="mini-label">Менеджеров работает</div><div class="mini-value" id="hr-mgr">—</div></div>
-        <div class="mini"><div class="mini-label">Вакансии</div><div class="mini-value">4 <span class="demo-badge">демо</span></div></div>
+  <div class="tiles">
+    <a class="tile" href="factum-auto-sales.html" id="t-sales">
+      <div class="t-head"><span class="t-name"><span class="st" id="st-sales"></span>Продажи</span><span class="t-more">открыть ›</span></div>
+      <div class="kpis">
+        <div class="kpi"><div class="l">Чистые депозиты</div><div class="v" id="sd-net">—</div><div id="sd-net-m"></div></div>
+        <div class="kpi"><div class="l">Покупки</div><div class="v" id="sd-buy">—</div><div id="sd-buy-m"></div></div>
+        <div class="kpi"><div class="l">Лиды</div><div class="v" id="sd-leads">—</div></div>
+        <div class="kpi"><div class="l">CR лид → депозит</div><div class="v" id="sd-cr">—</div></div>
       </div>
+      <div class="foot" id="sd-foot">Тёплых в Битрикс24 сейчас: —</div>
     </a>
-    <a class="dept" href="factum-auto-marketing.html">
-      <div class="dept-head"><span class="dept-name">Маркетинг</span><span class="arrow">→</span></div>
-      <div class="dept-mini">
-        <div class="mini"><div class="mini-label">Лиды за месяц</div><div class="mini-value" id="mk-leads">—</div></div>
-        <div class="mini"><div class="mini-label">CR в депозит</div><div class="mini-value" id="mk-cr">—</div></div>
+
+    <a class="tile" href="factum-auto-marketing.html" id="t-mk">
+      <div class="t-head"><span class="t-name"><span class="st" id="st-mk"></span>Маркетинг</span><span class="t-more">открыть ›</span></div>
+      <div class="kpis">
+        <div class="kpi"><div class="l">Лиды за месяц</div><div class="v" id="mk-leads">—</div><div id="mk-leads-m"></div></div>
+        <div class="kpi"><div class="l">Лидов в рабочий день</div><div class="v" id="mk-perday">—</div></div>
+        <div class="kpi"><div class="l">CR лид → покупка</div><div class="v" id="mk-crb">—</div></div>
+        <div class="kpi"><div class="l">Депозитов на 100 лидов</div><div class="v" id="mk-d100">—</div></div>
       </div>
+      <div class="foot" id="mk-foot">По странам: —</div>
     </a>
-    <a class="dept" href="factum-auto-sales.html">
-      <div class="dept-head"><span class="dept-name">Отдел продаж</span><span class="arrow">→</span></div>
-      <div class="dept-mini">
-        <div class="mini"><div class="mini-label">Покупки</div><div class="mini-value" id="sd-buy">—</div></div>
-        <div class="mini"><div class="mini-label">Депозиты (чистые)</div><div class="mini-value" id="sd-net">—</div></div>
+
+    <a class="tile" href="factum-auto-hr.html" id="t-hr">
+      <div class="t-head"><span class="t-name"><span class="st" id="st-hr"></span>HR</span><span class="t-more">открыть ›</span></div>
+      <div class="kpis">
+        <div class="kpi"><div class="l">Менеджеров работает</div><div class="v" id="hr-mgr">—</div></div>
+        <div class="kpi"><div class="l">С депозитами в этом месяце</div><div class="v" id="hr-dep">—</div></div>
+        <div class="kpi"><div class="l">Всего с новичками</div><div class="v" id="hr-all">—</div></div>
+        <div class="kpi"><div class="l">Без депозита</div><div class="v" id="hr-nodep">—</div></div>
       </div>
+      <div class="foot">Численность — из HR Битрикс24, «с депозитами» — из «Менеджеры отчет»</div>
     </a>
-    <a class="dept" href="factum-auto-finance.html">
-      <div class="dept-head"><span class="dept-name">Финансы</span><span class="arrow">🔒 →</span></div>
-      <div class="dept-mini">
-        <div class="mini"><div class="mini-label">Штат и ФОТ</div><div class="mini-value" style="font-size:14px;font-weight:600;padding-top:6px">доступ по паролю</div></div>
+
+    <a class="tile" href="factum-auto-finance.html" id="t-fin">
+      <div class="t-head"><span class="t-name"><span class="st"></span>Финансы</span><span class="t-more">🔒 открыть ›</span></div>
+      <div class="lock">Штат и ФОТ · доступ по паролю</div>
+      <div class="foot">Ежедневный баланс и дебиторка — <b>Финотдел</b> (вкладка в переключателе отделов выше)</div>
+    </a>
+
+    <a class="tile" href="goals.html?p=oex" id="b2b">
+      <div class="t-head"><span class="t-name"><span class="st" id="st-b2b"></span>B2B · Operator-EX</span><span class="t-more">цели ›</span></div>
+      <div class="kpis">
+        <div class="kpi"><div class="l">Куплено авто дилерами</div><div class="v" id="b2b-buy">—</div><div id="b2b-buy-m"></div></div>
+        <div class="kpi"><div class="l">Прошлый месяц</div><div class="v" id="b2b-prev">—</div></div>
       </div>
+      <div class="foot">Из «Аналитики B2B»; отдельной страницы приборов у B2B пока нет — ведёт в цели</div>
     </a>
+
+    <div class="tile" id="t-pick">
+      <div class="t-head"><span class="t-name"><span class="st"></span>Подбор</span><span class="t-more soon">скоро</span></div>
+      <div class="kpis">
+        <div class="kpi"><div class="l">В работе (депозит → торги)</div><div class="v">—</div></div>
+        <div class="kpi"><div class="l">Выиграно за месяц</div><div class="v">—</div></div>
+      </div>
+      <div class="foot">Появится, когда подключим воронку подбора из Битрикс24</div>
+    </div>
   </div>
 
+  <div class="note">Точка у названия — статус отдела по худшему из его план-факт показателей относительно темпа месяца (как на главной): зелёная — в темпе, жёлтая — отстаём, красная — сильно отстаём, серая — плана нет. Риска на шкале — темп месяца по рабочим дням. Цифры — текущий месяц из «Менеджеры отчет» и Битрикс24, обновляются при открытии страницы.</div>
 </div>
+
 <script>
 const esc = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;');
+const $ = id => document.getElementById(id);
 const SHEET_ID = '10sbvUaWDkrJJqIC7ciuSsci21GuRMUV5P2TBhZCTF8U';
 const MONTH_NUM = {'Январь':1,'Февраль':2,'Март':3,'Апрель':4,'Май':5,'Июнь':6,'Июль':7,'Август':8,'Сентябрь':9,'Октябрь':10,'Ноябрь':11,'Декабрь':12};
-const MONTH_ABBR = ['Янв','Фев','Мар','Апр','Май','Июн','Июл','Авг','Сен','Окт','Ноя','Дек'];
+const MONTH_FULL = ['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
+const NOW = new Date(), CM = NOW.getMonth() + 1;
+$('mon').textContent = MONTH_FULL[CM - 1].toLowerCase() + ' ' + NOW.getFullYear();
+
+// темп месяца по рабочим дням (пн–пт)
+let MP = 0, WD_TOTAL = 0, WD_DONE = 0;
+(function () {
+  const y = NOW.getFullYear(), m = NOW.getMonth(), dim = new Date(y, m + 1, 0).getDate();
+  for (let d = 1; d <= dim; d++) { const dow = new Date(y, m, d).getDay(); if (dow >= 1 && dow <= 5) { WD_TOTAL++; if (d <= NOW.getDate()) WD_DONE++; } }
+  MP = WD_TOTAL ? Math.round(WD_DONE / WD_TOTAL * 100) : 0;
+  $('mp-pct').textContent = MP + '%';
+  $('mp-days').textContent = WD_DONE + '-й рабочий день из ' + WD_TOTAL;
+})();
+
 function gvRows(t) { return (t.table.rows||[]).map(r => (r.c||[]).map(c => (c && c.v != null) ? c.v : '')); }
 function num(v) {
   if (typeof v === 'number') return Math.round(v);
@@ -113,131 +169,143 @@ function num(v) {
 }
 function pct(v) {
   let f = null;
-  if (typeof v === 'number') f = v < 1 ? v * 100 : v;
+  if (typeof v === 'number') f = v <= 1 ? v * 100 : v;
   else { const s = String(v).replace(',', '.').replace('%','').trim(); if (s) f = parseFloat(s); }
   return (f == null || isNaN(f)) ? null : Math.round(f * 10) / 10;
 }
+const fp = v => v == null ? '—' : String(v).replace('.', ',') + '%';
 function monthOf(l) { for (const n in MONTH_NUM) if (String(l).startsWith(n)) return MONTH_NUM[n]; return null; }
-function barPath(x, y, w, h, r) {
-  r = Math.min(r, w / 2, h);
-  return `M${x},${y+h} L${x},${y+r} Q${x},${y} ${x+r},${y} L${x+w-r},${y} Q${x+w},${y} ${x+w},${y+r} L${x+w},${y+h} Z`;
-}
-function columns(labels, vals, color) {
-  const W = 900, H = 170, padT = 22, padB = 18, padX = 6;
-  const plotH = H - padT - padB, baseY = padT + plotH;
-  const n = labels.length, groupW = (W - padX*2) / n;
-  const barW = Math.min(26, groupW - 16);
-  const nums = vals.filter(v => typeof v === 'number');
-  const maxV = nums.length ? Math.max(...nums) : 1;
-  let out = `<line x1="0" y1="${baseY}" x2="${W}" y2="${baseY}" stroke="var(--baseline)" stroke-width="1"/>`;
-  for (let i = 0; i < n; i++) {
-    const v = vals[i], gx = padX + i * groupW, x = gx + (groupW - barW) / 2;
-    if (typeof v === 'number') {
-      const h = Math.max(2, v / maxV * plotH), y = baseY - h;
-      out += `<path d="${barPath(x, y, barW, h, 4)}" fill="${color}"/>`;
-      out += `<text x="${x+barW/2}" y="${y-5}" text-anchor="middle" font-size="11" fill="var(--text-secondary)">${v}</text>`;
-    }
-    out += `<text x="${gx+groupW/2}" y="${baseY+14}" text-anchor="middle" font-size="11" ${i===n-1?'font-weight="650"':''} fill="var(--text-muted)">${esc(labels[i])}</text>`;
-  }
-  return `<svg viewBox="0 0 ${W} ${H}" role="img">${out}</svg>`;
-}
-function groupedColumns(labels, seriesArr) {
-  const W = 900, H = 190, padT = 22, padB = 18, padX = 6;
-  const plotH = H - padT - padB, baseY = padT + plotH;
-  const n = labels.length, nSer = seriesArr.length;
-  const groupW = (W - padX*2) / n;
-  const barW = Math.min(26, (groupW - 20 - (nSer-1)*2) / nSer);
-  const nums = seriesArr.flatMap(s => s.vals).filter(v => typeof v === 'number');
-  const maxV = nums.length ? Math.max(...nums) : 1;
-  let out = `<line x1="0" y1="${baseY}" x2="${W}" y2="${baseY}" stroke="var(--baseline)" stroke-width="1"/>`;
-  for (let i = 0; i < n; i++) {
-    const gx = padX + i * groupW;
-    const total = nSer * barW + (nSer-1)*2;
-    const start = gx + (groupW - total) / 2;
-    for (let s = 0; s < nSer; s++) {
-      const v = seriesArr[s].vals[i];
-      if (typeof v !== 'number') continue;
-      const h = Math.max(2, v / maxV * plotH), x = start + s*(barW+2), y = baseY - h;
-      out += `<path d="${barPath(x, y, barW, h, 4)}" fill="${seriesArr[s].color}"/>`;
-      out += `<text x="${x+barW/2}" y="${y-5}" text-anchor="middle" font-size="11" fill="var(--text-secondary)">${v}</text>`;
-    }
-    out += `<text x="${gx+groupW/2}" y="${baseY+14}" text-anchor="middle" font-size="11" fill="var(--text-muted)">${esc(labels[i])}</text>`;
-  }
-  const legend = seriesArr.map(s =>
-    `<span style="display:inline-flex;align-items:center;gap:6px;margin-right:16px;font-size:12px;color:var(--text-secondary)"><span style="width:10px;height:10px;border-radius:3px;background:${s.color}"></span>${esc(s.label)}</span>`).join('');
-  return `<div style="margin-bottom:6px">${legend}</div><svg viewBox="0 0 ${W} ${H}" role="img">${out}</svg>`;
-}
-// разбор Лист1: факт-показатели по месяцам 2026
-function parseFacts(rows) {
-  const F = { mgr:{}, leads:{}, dep:{}, net:{}, buy:{}, crDep:{}, crBuy:{} };
-  let cur = null;
-  for (const row of rows) {
-    const a = String(row[0]||'').trim();
-    if (a && a.indexOf('2026') > -1) { const m = monthOf(a); cur = (m && a.indexOf('Факт') > -1) ? m : null; }
-    if (!cur) continue;
-    const crit = String(row[1]||'').trim();
-    if (crit.startsWith('Менеджеры с деп')) F.mgr[cur] = num(row[2]);
-    else if (crit === 'Лиды') F.leads[cur] = num(row[2]);
-    else if (crit.startsWith('Депозиты Факт')) F.net[cur] = num(row[2]);
-    else if (crit === 'Депозиты') F.dep[cur] = num(row[2]);
-    else if (crit === 'Покупки') F.buy[cur] = num(row[2]);
-    else if (crit.startsWith('CR из лида в деп')) F.crDep[cur] = pct(row[2]);
-    else if (crit.startsWith('CR из лида в пок')) F.crBuy[cur] = pct(row[2]);
-  }
-  return F;
-}
-function series(map, cm) { const r=[]; for (let m=1;m<=cm;m++) r.push(map[m] ?? null); return r; }
 function gvLoad(sheet, handler, range) {
   const s = document.createElement('script');
   s.src = 'https://docs.google.com/spreadsheets/d/' + SHEET_ID + '/gviz/tq?tqx=responseHandler:' + handler +
           '&sheet=' + encodeURIComponent(sheet) + '&range=' + (range || 'A1:C300') + '&headers=0&t=' + Date.now();
   document.body.appendChild(s);
 }
-function stampSub(prefix) {
-  const now = new Date();
-  const t = String(now.getHours()).padStart(2,'0') + ':' + String(now.getMinutes()).padStart(2,'0');
-  document.getElementById('sub').textContent = prefix + ' · данные из таблицы, загружено в ' + t;
+
+// статус план/факт относительно темпа месяца — та же логика, что на главной
+function ratio(fact, plan) { if (plan == null || !plan || fact == null || !MP) return null; return Math.round(fact / plan * 100) / MP; }
+function statusColor(r) { return r == null ? 'var(--text-muted)' : (r >= 0.9 ? 'var(--status-good)' : (r >= 0.6 ? 'var(--status-warn)' : 'var(--status-bad)')); }
+function setStatus(id, ratios) {
+  const rs = ratios.filter(r => r != null);
+  $(id).style.background = statusColor(rs.length ? Math.min(...rs) : null);
+}
+// значение с планом и шкалой
+function kpiPlan(idV, idM, fact, plan) {
+  if (fact == null) return null;
+  const r = ratio(fact, plan), c = statusColor(r);
+  const p = plan ? Math.round(fact / plan * 100) : null;
+  $(idV).innerHTML = fact + (plan ? ` <small>/ ${plan}</small>` : '') + (p != null ? ` <span class="pct" style="color:${c}">${p}%</span>` : '');
+  if (idM && plan) $(idM).innerHTML = `<div class="meter" style="background:color-mix(in srgb, ${c} 16%, var(--surface-1))"><i style="width:${Math.min(100, p)}%;background:${c}"></i>${MP ? `<b style="left:${Math.min(99, MP)}%"></b>` : ''}</div>`;
+  return r;
 }
 
-
-window.__gvM = t => {
-  try {
-    const F = parseFacts(gvRows(t));
-    const cm = new Date().getMonth() + 1;
-    // численность людей берём только из HR Битрикс24 (Лист8), см. __gvH8 ниже
-    if (F.leads[cm] != null) document.getElementById('mk-leads').textContent = F.leads[cm];
-    if (F.crDep[cm] != null) document.getElementById('mk-cr').textContent = String(F.crDep[cm]).replace('.', ',') + '%';
-    // покупки показываем из «Общий зачет» (__gvS); Лист1 — только фолбэк
-    if (window.SPER == null && F.buy[cm] != null) document.getElementById('sd-buy').textContent = F.buy[cm];
-    if (F.net[cm] != null) document.getElementById('sd-net').textContent = F.net[cm];
-    stampSub('Импорт авто под заказ');
-  } catch (e) { console.log(e); }
-};
+// Лист1 — «Аналитика продаж месячная» в прежнем формате: план и факт по месяцам (колонка ВСЕГО + страны)
+const M = {};
+function parseMonthly(rows) {
+  let cur = null;
+  for (const row of rows) {
+    const a = String(row[0] || '').trim();
+    if (a && a.indexOf('2026') > -1) {
+      const kind = a.indexOf('Факт') > -1 ? 'fact' : (a.indexOf('План') > -1 ? 'plan' : null);
+      const m = monthOf(a); cur = (kind && m) ? kind + '|' + m : null;
+    }
+    if (!cur) continue;
+    const crit = String(row[1] || '').trim();
+    const v = row[2];
+    const key = crit.startsWith('Депозиты Факт') ? 'net' : crit === 'Депозиты' ? 'dep' : crit === 'Покупки' ? 'buy' : crit === 'Лиды' ? 'leads'
+      : crit.startsWith('Менеджеры с деп') ? 'mgr' : crit.startsWith('CR из лида в деп') ? 'crd' : crit.startsWith('CR из лида в пок') ? 'crb' : null;
+    if (!key) continue;
+    M[cur + '|' + key] = (key === 'crd' || key === 'crb') ? pct(v) : num(v);
+    if (key === 'leads') M[cur + '|leadsC'] = [row[3], row[4], row[5], row[6], row[7]].map(num); // Итого UA MD PL GE AM
+  }
+}
+const F = k => M['fact|' + CM + '|' + k], P = k => M['plan|' + CM + '|' + k];
+let SPER = null; // покупки из «Общий зачет» — отражаются раньше, чем в «Аналитике»
+function renderSales() {
+  if (F('net') == null && F('buy') == null && F('leads') == null) {
+    $('sub').textContent = MONTH_FULL[CM - 1].toLowerCase() + ' ещё не открыт в «Аналитике продаж» — цифры появятся с первыми депозитами';
+    return;
+  }
+  const buy = (SPER && SPER[CM - 1] != null) ? SPER[CM - 1] : F('buy');
+  const r1 = kpiPlan('sd-net', 'sd-net-m', F('net'), P('net'));
+  const r2 = kpiPlan('sd-buy', 'sd-buy-m', buy, P('buy'));
+  const r3 = kpiPlan('sd-leads', null, F('leads'), P('leads'));
+  $('sd-cr').textContent = fp(F('crd'));
+  setStatus('st-sales', [r1, r2]);
+  // маркетинг
+  kpiPlan('mk-leads', 'mk-leads-m', F('leads'), P('leads'));
+  if (F('leads') != null && WD_DONE) {
+    const norm = P('leads') && WD_TOTAL ? Math.round(P('leads') / WD_TOTAL) : null;
+    $('mk-perday').innerHTML = Math.round(F('leads') / WD_DONE) + (norm ? ` <small>норма ${norm}</small>` : '');
+  }
+  $('mk-crb').textContent = fp(F('crb'));
+  if (F('leads') && F('dep') != null) $('mk-d100').textContent = String(Math.round(F('dep') / F('leads') * 1000) / 10).replace('.', ',');
+  const lc = M['fact|' + CM + '|leadsC'];
+  if (lc) $('mk-foot').innerHTML = 'По странам: ' + ['UA', 'MD', 'PL', 'GE', 'AM'].map((c, i) => `<b>${c}</b> ${lc[i] ?? '—'}`).join(' · ');
+  setStatus('st-mk', [r3]);
+  // HR: с депозитами
+  if (F('mgr') != null) { $('hr-dep').textContent = F('mgr'); renderHr(); }
+  const t = String(NOW.getHours()).padStart(2, '0') + ':' + String(NOW.getMinutes()).padStart(2, '0');
+  $('sub').textContent = 'план и факт месяца по отделам · данные из таблиц, загружено в ' + t;
+}
+window.__gvM = t => { try { parseMonthly(gvRows(t)); renderSales(); } catch (e) { console.log(e); } };
 window.__gvS = t => {
   try {
-    // покупки — из «Общий зачет» (Лист3): там они отражаются вовремя
-    const per = {};
-    gvRows(t).forEach(r => { const y = Number(r[0]); if (y) per[y] = r.slice(1, 13).map(num); });
-    const sp = per[new Date().getFullYear()];
-    const cm = new Date().getMonth() + 1;
-    if (sp && typeof sp[cm - 1] === 'number') {
-      window.SPER = per;
-      document.getElementById('sd-buy').textContent = sp[cm - 1];
-    }
+    const per = {}; gvRows(t).forEach(r => { const y = Number(r[0]); if (y) per[y] = r.slice(1, 13).map(num); });
+    const sp = per[NOW.getFullYear()];
+    if (sp && typeof sp[CM - 1] === 'number') { SPER = sp; if (F('net') != null || F('leads') != null) renderSales(); }
   } catch (e) { console.log(e); }
 };
-gvLoad('Лист1', '__gvM');
-gvLoad('Лист3', '__gvS', 'A1:M10');
-// численность менеджеров — HR-данные Битрикс24 (Лист8: Дата | 30+ дней | всего)
+// HR Битрикс24 (Лист8: Дата | 30+ дней | всего)
+let HR = null;
 window.__gvH8 = t => {
   try {
     const rows = gvRows(t).filter(r => r[0] !== '' && r[1] !== '');
     if (!rows.length) return;
-    const last = rows[rows.length - 1];
-    if (last[1] != null && last[1] !== '') document.getElementById('hr-mgr').textContent = last[1];
+    HR = rows[rows.length - 1]; renderHr();
   } catch (e) { console.log(e); }
 };
+function renderHr() {
+  if (!HR) return;
+  const work = num(HR[1]), all = num(HR[2]); // «работает» — 30+ дней в компании (как на странице продаж), «всего» — с новичками
+  if (work != null) $('hr-mgr').textContent = work;
+  if (all != null) $('hr-all').textContent = all;
+  if (work != null && F('mgr') != null) $('hr-nodep').textContent = Math.max(0, work - F('mgr'));
+  $('st-hr').style.background = 'var(--text-muted)';
+}
+// тёплые лиды Битрикс24 (Лист16): Дата | UA MD PL GE AM Прочие | Всего | MQL | SQL …
+window.__gvB16 = t => {
+  try {
+    const rows = gvRows(t).filter(r => typeof r[7] === 'number');
+    if (!rows.length) return;
+    const L = rows[rows.length - 1];
+    $('sd-foot').innerHTML = `Тёплых в Битрикс24 сейчас: <b>${L[7]}</b> · MQL ${num(L[8]) ?? '—'} · SQL ${num(L[9]) ?? '—'}`;
+  } catch (e) { console.log(e); }
+};
+// B2B (Лист2 — «Аналитика B2B»): блоки «<Месяц> План/Факт», строка «Покупки»: ВСЕГО или сумма направлений
+window.__gvB = t => {
+  try {
+    const fact = {}, plan = {}; let cur = null, kind = null;
+    for (const row of gvRows(t)) {
+      const a = String(row[0] || '').trim();
+      if (a) { const m = monthOf(a), up = a.toUpperCase(); kind = up.indexOf('ФАКТ') > -1 ? 'f' : (up.indexOf('ПЛАН') > -1 ? 'p' : null); cur = (m && kind) ? m : null; }
+      if (cur && String(row[1] || '').trim() === 'Покупки') {
+        const c = num(row[2]), d = num(row[3]), e = num(row[4]);
+        const tot = (c != null) ? c : ((d != null || e != null) ? (d || 0) + (e || 0) : null);
+        if (kind === 'f') fact[cur] = tot; else plan[cur] = tot;
+      }
+    }
+    const r = kpiPlan('b2b-buy', 'b2b-buy-m', fact[CM] ?? 0, plan[CM] ?? null);
+    if (fact[CM - 1] != null) $('b2b-prev').innerHTML = fact[CM - 1] + ` <small>${MONTH_FULL[CM - 2] ? MONTH_FULL[CM - 2].toLowerCase() : ''}</small>`;
+    setStatus('st-b2b', [r]);
+  } catch (e) { console.log(e); }
+};
+gvLoad('Лист1', '__gvM', 'A1:H300');
+gvLoad('Лист3', '__gvS', 'A1:M10');
 gvLoad('Лист8', '__gvH8', 'A1:C400');
+gvLoad('Лист16', '__gvB16', 'A1:Q400');
+gvLoad('Лист2', '__gvB', 'A1:E300');
 </script>
+<script src="nav.js"></script>
 </body>
 </html>
